@@ -1,0 +1,1 @@
+export const API_HOST = 'http://localhost:8123/Quiniela2026/api/index.php'

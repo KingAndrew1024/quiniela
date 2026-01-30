@@ -1,0 +1,15 @@
+.row {
+  display: flex;
+  width: min-content;
+}
+.row.header {
+  font-weight: bold;
+}
+
+.col.index {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 2px;
+  width: 30px;
+}
