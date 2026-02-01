@@ -16,6 +16,7 @@ export interface IUserModel {
   id?: number,
   user: string
   name: string
+  points: number;
   password: string
 }
 

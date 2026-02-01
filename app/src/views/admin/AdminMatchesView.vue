@@ -7,7 +7,7 @@
     <LoadingComponent :message="errorMessage"></LoadingComponent>
   </div>
 
-  <div v-if="matchesPostData.length > 0">
+  <div v-if="!matchesData.length">
     Partidos: <input type="number" min="1" v-model="matchesNumber" />
   </div>
 
@@ -98,6 +98,8 @@ onMounted(() => {
       date: '2026-01-01',
       team1_id: 0,
       team2_id: 0,
+      team1_goals: 0,
+      team2_goals: 0,
     },
   ]
 
@@ -111,6 +113,8 @@ watch(matchesNumber, (newVal) => {
       date: '2026-06-01',
       team1_id: 4,
       team2_id: 5,
+      team1_goals: 0,
+      team2_goals: 0,
     })
   }
 })

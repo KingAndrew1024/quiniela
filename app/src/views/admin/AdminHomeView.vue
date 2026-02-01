@@ -2,6 +2,9 @@
   <div id="sticky-top">
     <h1>Panel de Administración</h1>
     <div>
+      <button @click="goHome()">
+        Regresar
+      </button>
       <button @click="showView('teams')" :disabled="currentButton == BUTTONS_ENUM.teams">
         Equipos
       </button>
@@ -40,6 +43,10 @@ const currentButton = ref<buttonTypes>(router.currentRoute.value.name as buttonT
 function showView(path: buttonTypes) {
   currentButton.value = BUTTONS_ENUM[path]
   router.push(path)
+}
+
+function goHome(){
+  router.push('/')
 }
 </script>
 

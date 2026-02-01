@@ -2,6 +2,22 @@ import type { IForecastModel } from '@/model/IForecast'
 import { API_HOST } from '@/utils/constants'
 
 export class ForecastService {
+  static async list(): Promise<IForecastModel[]> {
+    try {
+      const response = await fetch(`${API_HOST}/forecasts/list`)
+
+      // Check if the response status is OK (e.g., status in the 200 range)
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('--- @ForecastService: list() error', error)
+      throw error
+    }
+  }
+
   static async getByUser(id: number): Promise<IForecastModel[]> {
     try {
       const response = await fetch(`${API_HOST}/forecasts/listByUser/${id}`)
@@ -17,6 +33,7 @@ export class ForecastService {
       throw error
     }
   }
+
   static async insert(payload: IForecastModel[]): Promise<boolean> {
     try {
       /* return new Promise((resolve) => {

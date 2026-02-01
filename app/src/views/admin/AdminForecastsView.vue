@@ -212,8 +212,8 @@ function getMatchesData() {
   matchesData.value.forEach((m) => {
     forecastToPost.value.push({
       match_id: m.id!,
-      team1_goals: undefined,
-      team2_goals: undefined,
+      team1_goals: 0,
+      team2_goals: 0,
     })
   })
 }
