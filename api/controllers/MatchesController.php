@@ -10,7 +10,7 @@ class MatchesController extends BaseController
 
     if (strtoupper($requestMethod) == 'GET') {
       try {
-        $sql = 'SELECT matches.id, matches.date, team1.id as team1_id, team1.name as team1_name, team1.code as team1_code, matches.team1_goals as  team1_goals, matches.team2_goals as  team2_goals,' .
+        $sql = 'SELECT matches.id, matches.date, team1.id as team1_id, team1.name as team1_name, team1.code as team1_code, matches.team1_goals as  team1_goals, matches.team2_goals as  team2_goals, matches.played, ' .
           'team2.id as team2_id, team2.name as team2_name, team2.code as team2_code FROM matches ' .
           'INNER JOIN teams as team1 ON matches.team1_id=team1.id INNER JOIN teams as team2 ON matches.team2_id=team2.id ORDER BY matches.date';
         $stmt = $this->dbHandle->prepare($sql);
@@ -60,7 +60,7 @@ class MatchesController extends BaseController
       try {
         $this->dbHandle->beginTransaction();
 
-        $sql = "INSERT INTO matches (date, team1_id, team2_id, played) values (:date, :team1_id, :team2_id, 1)";
+        $sql = "INSERT INTO matches (date, team1_id, team2_id) values (:date, :team1_id, :team2_id)";
         $stmt = $this->dbHandle->prepare($sql);
 
         $date = '';
@@ -130,7 +130,7 @@ class MatchesController extends BaseController
       }
 
       try {
-        $sql = "UPDATE matches SET team1_goals=:team1_goals, team2_goals=:team2_goals WHERE id=:id";
+        $sql = "UPDATE matches SET team1_goals=:team1_goals, team2_goals=:team2_goals, played=1 WHERE id=:id";
         $stmt = $this->dbHandle->prepare($sql);
 
         //Run prepared statement for current record

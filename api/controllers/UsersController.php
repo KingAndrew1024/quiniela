@@ -11,7 +11,7 @@ class UsersController extends BaseController
 
     if (strtoupper($requestMethod) == 'GET') {
       try {
-        $sql = 'SELECT * FROM users';
+        $sql = 'SELECT id, user, name, points FROM users';
         $stmt = $this->dbHandle->prepare($sql);
         $stmt->execute();
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
