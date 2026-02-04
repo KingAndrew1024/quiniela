@@ -12,7 +12,7 @@ class MatchesController extends BaseController
       try {
         $sql = 'SELECT matches.id, matches.date, team1.id as team1_id, team1.name as team1_name, team1.code as team1_code, matches.team1_goals as  team1_goals, matches.team2_goals as  team2_goals, matches.played, ' .
           'team2.id as team2_id, team2.name as team2_name, team2.code as team2_code FROM matches ' .
-          'INNER JOIN teams as team1 ON matches.team1_id=team1.id INNER JOIN teams as team2 ON matches.team2_id=team2.id ORDER BY matches.date';
+          'INNER JOIN teams as team1 ON matches.team1_id=team1.id INNER JOIN teams as team2 ON matches.team2_id=team2.id ORDER BY matches.id ASC';
         $stmt = $this->dbHandle->prepare($sql);
         $stmt->execute();
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
@@ -134,7 +134,59 @@ class MatchesController extends BaseController
         $stmt = $this->dbHandle->prepare($sql);
 
         //Run prepared statement for current record
-        $stmt->execute(array('team1_goals' =>$data['team1_goals'], 'team2_goals' =>$data['team2_goals'], 'id' =>$data['match_id']));
+        $stmt->execute(array('team1_goals' => $data['team1_goals'], 'team2_goals' => $data['team2_goals'], 'id' => $data['match_id']));
+
+        // Return the number of inserted rows
+        $responseData = json_encode(true);
+        //$responseData = json_encode(array("insertedRows", $values));
+      } catch (Error $e) {
+        // Roll back the transaction if something goes wrong
+        $this->dbHandle->rollBack();
+
+        $strErrorDesc = $e->getMessage() . 'Something went wrong! Please contact support.';
+        $strErrorHeader = 'HTTP/1.1 500 Internal Server Error';
+      }
+    } else {
+      $strErrorDesc = 'Method not supported';
+      $strErrorHeader = 'HTTP/1.1 422 Unprocessable Entity';
+    }
+
+    // send output
+    if (!$strErrorDesc) {
+      $this->sendOutput(
+        $responseData,
+        array('Content-Type: application/json', 'HTTP/1.1 200 OK')
+      );
+    } else {
+      $this->sendOutput(
+        json_encode(array('error' => $strErrorDesc)),
+        array('Content-Type: application/json', $strErrorHeader)
+      );
+    }
+  }
+
+  public function updateMatchAction()
+  {
+    $strErrorDesc = '';
+    $requestMethod = $_SERVER["REQUEST_METHOD"];
+
+    if (strtoupper($requestMethod) == 'POST') {
+      $data = json_decode(file_get_contents('php://input'), true);
+      if ($data == NULL) {
+        $strErrorDesc = 'No se recibieron los parametros necesarios!';
+        $strErrorHeader = 'HTTP/1.1 400 Bad Request';
+        return $this->sendOutput(
+          json_encode(array('error' => $strErrorDesc)),
+          array('Content-Type: application/json', $strErrorHeader)
+        );
+      }
+
+      try {
+        $sql = "UPDATE matches SET team1_id=:team1_id, team2_id=:team2_id, date=:date WHERE id=:id";
+        $stmt = $this->dbHandle->prepare($sql);
+
+        //Run prepared statement for current record
+        $stmt->execute(array('team1_id' => $data['team1_id'], 'team2_id' => $data['team2_id'], 'date' => $data['date'], 'id' => $data['id']));
 
         // Return the number of inserted rows
         $responseData = json_encode(true);

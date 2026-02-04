@@ -3,6 +3,7 @@ import AdminHomeView from '@/views/admin/AdminHomeView.vue'
 import AdminMatchesView from '@/views/admin/AdminMatchesView.vue'
 import AdminResultsView from '@/views/admin/AdminResultsView.vue'
 import AdminTeamsView from '@/views/admin/AdminTeamsView.vue'
+import AdminUsersView from '@/views/admin/AdminUsersView.vue'
 import HomeView from '@/views/HomeView.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
@@ -27,6 +28,11 @@ const router = createRouter({
           path: '/teams',
           name: 'teams',
           component: AdminTeamsView,
+        },
+        {
+          path: '/users',
+          name: 'users',
+          component: AdminUsersView,
         },
         {
           path: '/forecasts',

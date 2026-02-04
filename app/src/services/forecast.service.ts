@@ -64,7 +64,26 @@ export class ForecastService {
 
   static async updateRow(payload: IForecastModel): Promise<boolean> {
     try {
-      const response = await fetch(`${API_HOST}/forecasts/update`, {
+      const response = await fetch(`${API_HOST}/forecasts/updateRow`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+
+      // Check if the response status is OK (e.g., status in the 200 range)
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('--- @ForecastService: saveUserData() error', error)
+      throw error
+    }
+  }
+
+  static async updateAll(payload: IForecastModel[]): Promise<boolean> {
+    try {
+      const response = await fetch(`${API_HOST}/forecasts/updateAll`, {
         method: 'POST',
         body: JSON.stringify(payload),
       })

@@ -2,8 +2,8 @@ export interface IForecastModel {
   id?: number
   user_id?: number
   match_id: number
-  team1_goals: number
-  team2_goals: number
+  team1_goals?: number
+  team2_goals?: number
 }
 
 /*

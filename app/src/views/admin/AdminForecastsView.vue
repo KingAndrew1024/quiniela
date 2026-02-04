@@ -1,10 +1,8 @@
 <template>
   <h2>Crear Quiniela</h2>
   <div>
-    <button :disabled="currentView == 'create'" @click="currentView = 'create'">
-      Crear usuario
-    </button>
-    <button :disabled="currentView == 'list'" @click="showList()">Actualizar quinielas</button>
+    <button :disabled="currentView == 'create'" @click="showCreateUser()">Crear usuario</button>
+    <button :disabled="currentView == 'update'" @click="showList()">Actualizar quinielas</button>
   </div>
 
   <LoadingComponent :message="loadingMessage" v-if="isLoading"></LoadingComponent>
@@ -13,107 +11,84 @@
     <LoadingComponent :message="errorMessage"></LoadingComponent>
   </div>
 
-  <div class="form user" v-if="!isLoading && currentView == 'create'">
-    <h3>Datos del usuario</h3>
-    <div class="row">
-      Nombre: <input type="text" :disabled="!!userPostData.id" v-model="userPostData.name" />
+  <div class="main-content">
+    <!-- Create User form -->
+    <div class="form user" v-if="!isLoading && currentView == 'create'">
+      <h3>Datos del usuario</h3>
+      <div class="row">
+        Nombre: <input type="text" :disabled="!!userPostData.id" v-model="userPostData.name" />
+      </div>
+      <div class="row">
+        Usuario: <input type="text" :disabled="!!userPostData.id" v-model="userPostData.user" />
+      </div>
+      <div class="row" v-if="!userPostData.id">
+        Contraseña:
+        <input type="text" minlength="8" maxlength="8" v-model="userPostData.password" />
+      </div>
+      <div class="row" v-if="userPostData.id">
+        <div>User ID: {{ userPostData.id }}</div>
+      </div>
+      <div v-if="!userPostData.id">
+        <button :disabled="!canCreateUser" @click="createUser()">Crear usuario</button>
+      </div>
     </div>
-    <div class="row">
-      Usuario: <input type="text" :disabled="!!userPostData.id" v-model="userPostData.user" />
-    </div>
-    <div class="row" v-if="!userPostData.id">
-      Contraseña: <input type="text" minlength="8" maxlength="8" v-model="userPostData.password" />
-    </div>
-    <div class="row" v-if="userPostData.id">
-      <div>User ID: {{ userPostData.id }}</div>
-    </div>
-    <div v-if="!userPostData.id">
-      <button @click="saveUserData()">Crear usuario</button>
-    </div>
-  </div>
-  <div class="form forecast" v-if="!isLoading && userPostData.id">
-    <div class="row header">
-      <div class="col">ID</div>
-      <div class="col">Local</div>
-      <div class="col">Visitante</div>
-    </div>
-    <div class="row body" v-for="(match, idx) in matchesData" :key="match.id">
-      <div class="col">({{ match.id }}) {{ idx + 1 }} de {{ matchesData.length }}</div>
-      <div class="col">
-        <div class="row inner">
-          <div class="col">{{ teamName(match.team1_id) }}</div>
-          <div class="col">{{ teamName(match.team2_id) }}</div>
+
+    <!-- USERS LIST -->
+    <div id="users-list-wrapper" v-if="currentView == 'update' && usersData.length">
+      <h3>Usuarios</h3>
+      <div class="form">
+        <div class="row header">
+          <div class="col">ID</div>
+          <div class="col">Nombre</div>
+          <div class="col">Usuario</div>
+          <div class="col"></div>
         </div>
-        <div class="row inner">
+        <div class="row body" v-for="user in usersData" :key="user.id">
+          <div class="col">{{ user.id }}</div>
+          <div class="col">{{ user.name }}</div>
+          <div class="col">{{ user.user }}</div>
           <div class="col">
-            <input
-              type="number"
-              min="0"
-              max="10"
-              placeholder="--"
-              v-model="forecastToPost[idx]!.team1_goals"
-            />
-          </div>
-          <div class="col">
-            <input
-              type="number"
-              min="0"
-              max="10"
-              placeholder="--"
-              v-model="forecastToPost[idx]!.team2_goals"
-            />
+            <button :disabled="userPostData.id === user.id" @click="getForecastByUser(user.id!)">
+              Ver
+            </button>
           </div>
         </div>
       </div>
     </div>
-    <button @click="saveForecast()">Guardar todo</button>
-  </div>
 
-  <!-- USERS LIST -->
-  <div v-if="currentView == 'list' && usersData.length">
-    <h3>Usuarios</h3>
-    <div class="form">
-      <div class="row header">
-        <div class="col">ID</div>
-        <div class="col">Nombre</div>
-        <div class="col">Usuario</div>
-        <div class="col"></div>
-      </div>
-      <div class="row body" v-for="user in usersData" :key="user.id">
-        <div class="col">{{ user.id }}</div>
-        <div class="col">{{ user.name }}</div>
-        <div class="col">{{ user.user }}</div>
-        <div class="col">
-          <button @click="getForecastByUser(user.id!)">Ver</button>
+    <div id="forecast-form-wrapper" v-if="userForecast.length && userPostData.id">
+      <h3>
+        Quiniela de [{{ userPostData.id }}] {{ userPostData.name }}
+        <button v-if="currentView === 'update'" @click="updateForecast()">Actualizar</button>
+        <button
+          :disabled="!canCreateForecast"
+          v-if="currentView === 'create'"
+          @click="createForecast()"
+        >
+          Crear
+        </button>
+      </h3>
+      <div class="form forecast">
+        <div class="row header">
+          <div class="col">ID</div>
+          <div class="col team">Local</div>
+          <div class="col team">Visitante</div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="form forecast" v-if="userForecast.length">
-    <h4>Quiniela</h4>
-    <div class="row header">
-      <div class="col">ID</div>
-      <div class="col">Local</div>
-      <div class="col">Visitante</div>
-      <div class="col"></div>
-    </div>
-    <div class="row body" v-for="(f, idx) in userForecast" :key="f.id">
-      <div class="col">{{ idx + 1 }} de {{ userForecast.length }}</div>
-      <div class="col">
-        <div>
-          {{ teamName(matchesData[idx]!.team1_id) }}
+        <div class="row body" v-for="(f, idx) in userForecast" :key="f.id">
+          <div class="col">{{ idx + 1 }}</div>
+          <div class="col team">
+            <div>
+              {{ teamName(matchesData[idx]!.team1_id) }}
+            </div>
+            <input type="number" min="0" max="10" placeholder="--" v-model="f.team1_goals" />
+          </div>
+          <div class="col team">
+            <div>
+              {{ teamName(matchesData[idx]!.team2_id) }}
+            </div>
+            <input type="number" min="0" max="10" placeholder="--" v-model="f.team2_goals" />
+          </div>
         </div>
-        <input type="number" min="0" max="10" placeholder="--" v-model="f.team1_goals" />
-      </div>
-      <div class="col">
-        <div>
-          {{ teamName(matchesData[idx]!.team2_id) }}
-        </div>
-        <input type="number" min="0" max="10" placeholder="--" v-model="f.team2_goals" />
-      </div>
-      <div class="col">
-        <button @click="updateRow(f)">Actualizar</button>
       </div>
     </div>
   </div>
@@ -127,24 +102,22 @@ import type { ITeamModel } from '@/model/ITeam'
 import type { IUserGetModel, IUserPostModel } from '@/model/IUser'
 import { ForecastService } from '@/services/forecast.service'
 import { UserService } from '@/services/user.service'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 const isLoading = ref<boolean>(false)
 const loadingMessage = ref<string>()
 const errorMessage = ref<string>()
 
-const currentView = ref<'create' | 'list'>('create')
+const currentView = ref<'create' | 'update'>('create')
 
 const usersData = ref<IUserGetModel[]>([])
 const userPostData = ref<IUserPostModel>({
-  //id: 2,
   name: '',
   user: '',
   password: '',
 })
 const teamsData = ref<ITeamModel[]>([])
 const matchesData = ref<IMatchModel[]>([])
-const forecastToPost = ref<IForecastModel[]>([])
 const userForecast = ref<IForecastModel[]>([])
 
 onMounted(async () => {
@@ -169,7 +142,8 @@ function teamName(id: number) {
 }
 
 function showList() {
-  currentView.value = 'list'
+  currentView.value = 'update'
+  userForecast.value = []
   getUsersData()
 }
 
@@ -178,25 +152,46 @@ async function getForecastByUser(id: number) {
   errorMessage.value = undefined
 
   ForecastService.getByUser(id!)
-    .then((data) => {
-      userForecast.value = data
+    .then(async (data) => {
+      if (data.length) {
+        userForecast.value = data
+      }
+
+      const userResponse = await UserService.userById(id)
+      userPostData.value = userResponse
+      currentView.value = 'update'
+
+      const table = document.querySelector('#forecast-form-wrapper .form')!
+      if(table) {
+        table.scrollTo({
+          top: 0,
+          behavior: 'smooth',
+        })
+      }
     })
-    .catch(() => {
+    .catch((e) => {
       errorMessage.value = 'Error: No se pudo obtener las Quinielas'
+      console.error(e)
     })
     .finally(() => {
       isLoading.value = false
     })
 }
 
-async function saveUserData() {
+async function createUser() {
   isLoading.value = true
   loadingMessage.value = 'Creando usuario...'
   errorMessage.value = undefined
 
   UserService.insert(userPostData.value)
     .then((r) => {
+      currentView.value = 'create'
+
       userPostData.value.id = r.insertedId
+
+      if (!userForecast.value.length) {
+        getMatchesData()
+      }
     })
     .catch((e) => {
       errorMessage.value = 'Error: No se pudo crear el usuario'
@@ -209,11 +204,13 @@ async function saveUserData() {
 
 function getMatchesData() {
   matchesData.value = JSON.parse(localStorage.getItem('matchesData') || '[]')
+  matchesData.value/* .sort((a, b) => a.id! - b.id!) */
+
   matchesData.value.forEach((m) => {
-    forecastToPost.value.push({
+    userForecast.value.push({
       match_id: m.id!,
-      team1_goals: 0,
-      team2_goals: 0,
+      team1_goals: undefined,
+      team2_goals: undefined,
     })
   })
 }
@@ -234,12 +231,12 @@ async function getUsersData() {
     })
 }
 
-async function saveForecast() {
+async function createForecast() {
   isLoading.value = true
   errorMessage.value = undefined
   loadingMessage.value = 'Creando Quiniela...'
 
-  const postData: IForecastModel[] = forecastToPost.value.map((d: IForecastModel) => ({
+  const postData: IForecastModel[] = userForecast.value.map((d: IForecastModel) => ({
     ...d,
     user_id: userPostData.value.id,
   }))
@@ -265,25 +262,58 @@ async function saveForecast() {
     })
 }
 
-function updateRow(f: IForecastModel) {
+function updateForecast() {
   isLoading.value = true
   errorMessage.value = undefined
-  loadingMessage.value = 'Creando Quiniela...'
+  loadingMessage.value = 'Actualizando Quiniela...'
 
-  ForecastService.updateRow(f)
+  ForecastService.updateAll(userForecast.value)
     .then((isOk) => {
-      console.log('Marcador actualizado!');
+      console.log('Quiniela actualizada!')
     })
     .catch((e) => {
-      errorMessage.value = 'Error: No se pudo actualizar el marcador del partido ' +e
+      errorMessage.value = 'Error: No se pudo actualizar la Quiniela ' + e
     })
     .finally(() => {
       isLoading.value = false
     })
 }
+
+const canCreateUser = computed(() => {
+  return (
+    currentView.value == 'create' &&
+    userPostData.value.name.length &&
+    userPostData.value.user &&
+    userPostData.value.password
+  )
+})
+
+const canCreateForecast = computed(() => {
+  const noValues: (string | number | undefined)[] = ['', undefined]
+  return !userForecast.value.some(
+    (f) => noValues.includes(f.team1_goals) || noValues.includes(f.team2_goals),
+  )
+})
+
+function showCreateUser() {
+  currentView.value = 'create'
+  userPostData.value = {
+    name: '',
+    user: '',
+    password: '',
+  }
+
+  userForecast.value = []
+}
 </script>
 
 <style scoped>
+.main-content {
+  flex-direction: row;
+}
+.form {
+  overflow-y: auto;
+}
 .form.user {
   width: 300px;
 }
@@ -325,8 +355,30 @@ function updateRow(f: IForecastModel) {
 .col {
   width: 80px;
 }
-.form.forecast .col {
-  width: 120px;
+
+#users-list-wrapper,
+#forecast-form-wrapper {
+  display: flex;
+  flex-direction: column;
+  margin-left: 12px;
+  margin-bottom: 20px;
+}
+
+#forecast-form-wrapper * {
+  text-align: center;
+}
+
+#forecast-form-wrapper .row.header {
+  position: sticky;
+  top: 0;
+  background-color: #ccc;
+}
+
+#forecast-form-wrapper .col {
+  width: 20px;
+}
+#forecast-form-wrapper .col.team {
+  width: 160px;
 }
 /* .col input {
   width: 60px;

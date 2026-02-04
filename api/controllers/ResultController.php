@@ -89,7 +89,7 @@ class ResultController extends BaseController
           }
         }
 
-        $responseData = json_encode($data);
+        $responseData = json_encode(array("allRowsInserted" => $stmt->rowCount() == 1));
       } catch (Error $e) {
         $strErrorDesc = $e->getMessage() . 'Something went wrong! Please contact support.';
         $strErrorHeader = 'HTTP/1.1 500 Internal Server Error';

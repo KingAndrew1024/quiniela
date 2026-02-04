@@ -11,7 +11,7 @@ class TeamsController extends BaseController
 
     if (strtoupper($requestMethod) == 'GET') {
       try {
-        $sql = 'SELECT * FROM teams';
+        $sql = 'SELECT * FROM teams ORDER BY code';
         $stmt = $this->dbHandle->prepare($sql);
         $stmt->execute();
         $stmt->setFetchMode(PDO::FETCH_ASSOC);

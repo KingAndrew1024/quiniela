@@ -4,33 +4,27 @@
 
   <div class="form">
     <div class="row header">
-      <div class="col">No.</div>
-      <div class="col">Fecha</div>
-      <div class="col">Local</div>
-      <div class="col">Visitante</div>
-      <div class="col"></div>
+      <div class="col number">No.</div>
+      <div class="col date">Fecha</div>
+      <div class="col home">Local</div>
+      <div class="col away">Visitante</div>
+      <div class="col action">Acción</div>
     </div>
     <template v-if="!isLoading && !errorMessage">
       <div class="row body" v-for="(m, idx) in matchesData">
-        <div class="col">{{ idx + 1 }}</div>
-        <div class="col">{{ m.date }}</div>
-        <div class="col">
-          <div>
-            {{ teamName(matchesData[idx]!.team1_id) }}
-          </div>
-          <div>
-            <input type="number" min="0" max="10" placeholder="--" v-model="m.team1_goals" />
-          </div>
+        <div class="col number">{{ idx + 1 }}</div>
+        <div class="col date">{{ m.date }}</div>
+        <div class="col home">
+          {{ teamName(matchesData[idx]!.team1_id) }}
+          <input type="number" :id="'home-' + idx" min="0" max="10" placeholder="--" v-model="m.team1_goals" />
         </div>
-        <div class="col">
-          <div>
-            {{ teamName(matchesData[idx]!.team2_id) }}
-          </div>
-          <div>
-            <input type="number" min="0" max="10" placeholder="--" v-model="m.team2_goals" />
-          </div>
+        <div class="col away">
+          {{ teamName(matchesData[idx]!.team2_id) }}
+          <input type="number" :id="'away-' + idx" min="0" max="10" placeholder="--" v-model="m.team2_goals" />
         </div>
-        <div class="col"><button @click="saveRow(m)">Guardar</button></div>
+        <div class="col action">
+          <button @click="saveRow(m)" :disabled="!canSaveMatch(m)">Guardar</button>
+        </div>
       </div>
     </template>
   </div>
@@ -80,7 +74,11 @@ function loadMatches() {
 
   MatchService.list(true)
     .then((data) => {
-      matchesData.value = data
+      matchesData.value = data.map((m) => ({
+        ...m,
+        team1_goals: m.played ? m.team1_goals : undefined,
+        team2_goals: m.played ? m.team2_goals : undefined,
+      }))
     })
     .catch((e) => {
       errorMessage.value = 'Error: No se pudieron obtener los Partidos' + e
@@ -144,6 +142,12 @@ function saveAllData() {
       isLoading.value = false
     })
 }
+
+function canSaveMatch(m: IMatchModel) {
+  const noValues: (string | number | undefined)[] = ['', undefined]
+
+  return !noValues.includes(m.team1_goals) && !noValues.includes(m.team2_goals)
+}
 </script>
 
 <style scoped>
@@ -154,12 +158,23 @@ function saveAllData() {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
   border: 1px solid gray;
-  text-align: center;
-  width: 90px;
 }
-
-input {
+.col.number {
+  width: 40px;
+}
+.col.date {
+  width: 100px;
+}
+.col.home,
+.col.away {
+  width: 150px;
+}
+.col.action {
+  width: 80px;
+}
+.col.input {
   width: 50px;
 }
 </style>

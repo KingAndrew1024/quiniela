@@ -1,12 +1,70 @@
+* {
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+  /* font-size: 18px; */
+  user-select: none;
+}
+
 html,
 body,
 #app {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
   width: 100%;
   height: 100%;
 }
 html {
   background-color: #ccc;
 }
+
+:root {
+  --border-w: 4px;
+  --team-col-w: 90px;
+}
+
+@media screen and (orientation: portrait) and (max-width: 500px) {
+  :root {
+    --team-col-w: 90px;
+  }
+
+  * {
+    font-size: 12px;
+  }
+}
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  :root {
+    --team-col-w: 112px;
+  }
+
+  * {
+    font-size: 10px;
+  }
+}
+
+.main-content {
+  display: flex;
+  justify-content: left;
+  flex-direction: column;
+  overflow: auto;
+  height: auto;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  margin-left: 12px;
+  margin-bottom: 20px;
+  overflow: auto;
+  width: min-content;
+}
+.form .row.header {
+  position: sticky;
+  top: 0;
+  background-color: #ccc;
+}
+
 .row {
   display: flex;
   width: min-content;
@@ -15,10 +73,168 @@ html {
   font-weight: bold;
 }
 
-.col.index {
+/* .col.index {
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 0 2px;
   width: 30px;
+} */
+
+.col input[type="number"] {
+  text-align: center;
+}
+
+.flag {
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+.ALG {
+  background-image: url(/flags/DZA.png);
+}
+.ARG {
+  background-image: url(/flags/ARG.png);
+}
+.AUS {
+  background-image: url(/flags/AUS.png);
+}
+.AUT {
+  background-image: url(/flags/AUT.png);
+}
+.BEL {
+  background-image: url(/flags/BEL.png);
+}
+.BRA {
+  background-image: url(/flags/BRA.png);
+}
+.CAN {
+  background-image: url(/flags/CAN.png);
+}
+.CIV {
+  background-image: url(/flags/CIV.png);
+}
+.COL {
+  background-image: url(/flags/COL.png);
+}
+.CPV {
+  background-image: url(/flags/CPV.png);
+}
+.CRO {
+  background-image: url(/flags/CRO.png);
+}
+.CUW {
+  background-image: url(/flags/CUW.png);
+}
+.ECU {
+  background-image: url(/flags/ECU.png);
+}
+.EGY {
+  background-image: url(/flags/EGY.png);
+}
+.ENG {
+  background-image: url(/flags/ENG.png);
+}
+.ESP {
+  background-image: url(/flags/ESP.png);
+}
+.FRA {
+  background-image: url(/flags/FRA.png);
+}
+.GER {
+  background-image: url(/flags/GER.png);
+}
+.GHA {
+  background-image: url(/flags/GHA.png);
+}
+.HAI {
+  background-image: url(/flags/HAI.png);
+}
+.IRN {
+  background-image: url(/flags/IRN.png);
+}
+.JOR {
+  background-image: url(/flags/JOR.png);
+}
+.JPN {
+  background-image: url(/flags/JPN.png);
+}
+.KOR {
+  background-image: url(/flags/KOR.png);
+}
+.KSA {
+  background-image: url(/flags/KSA.png);
+}
+.MAR {
+  background-image: url(/flags/MAR.png);
+}
+.MEX {
+  background-image: url(/flags/MEX.png);
+}
+.NED {
+  background-image: url(/flags/NED.png);
+}
+.NOR {
+  background-image: url(/flags/NOR.png);
+}
+.NZL {
+  background-image: url(/flags/NZL.png);
+}
+.PAN {
+  background-image: url(/flags/PAN.png);
+}
+.PAR {
+  background-image: url(/flags/PAR.png);
+}
+.POR {
+  background-image: url(/flags/POR.png);
+}
+.QAT {
+  background-image: url(/flags/QAT.png);
+}
+.RSA {
+  background-image: url(/flags/RSA.png);
+}
+.SCO {
+  background-image: url(/flags/SCO.png);
+}
+.SEN {
+  background-image: url(/flags/SEN.png);
+}
+.SUI {
+  background-image: url(/flags/SUI.png);
+}
+.TUN {
+  background-image: url(/flags/TUN.png);
+}
+.URU {
+  background-image: url(/flags/URU.png);
+}
+.USA {
+  background-image: url(/flags/USA.png);
+}
+.UZB {
+  background-image: url(/flags/UZB.png);
+}
+
+.X1,
+.X2,
+.X3,
+.X4,
+.X5,
+.X6 {
+  background-color: white;
+  position: relative;
+}
+.X1::after,
+.X2::after,
+.X3::after,
+.X4::after,
+.X5::after,
+.X6::after {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  content: '?';
+  width: 100%;
+  height: 100%;
 }
