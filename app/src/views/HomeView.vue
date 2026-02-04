@@ -1,9 +1,11 @@
 <template>
   <div class="table">
     <div class="row header">
-      <div class="col rank" @click="sortByPoints()">#</div>
+      <div class="col rank" @click="sortByPoints()">
+        <span>Puntos</span>
+      </div>
       <div class="col username bold" @click="sortByUser()">Usuario</div>
-      <div class="col points bold" @click="sortByPoints()">Puntos</div>
+      <!-- <div class="col points bold" @click="sortByPoints()">Puntos</div> -->
       <div
         class="col col-span-2 match"
         :class="{ even: idx % 2 === 0, 'not-played': !match.played }"
@@ -28,11 +30,11 @@
     </div>
 
     <div class="row forecast-data" v-for="(data, idx) in userForecasts">
-      <div class="col rank">{{ data.rank }}</div>
+      <div class="col rank">{{ data.user_points }}</div>
       <div class="col username" id="user">{{ data.user_name }}</div>
-      <div class="col points" id="points">{{ data.user_points }}</div>
+      <!-- <div class="col points" id="points">{{ data.user_points }}</div> -->
       <template v-for="(forecast, idx) in data.forecasts">
-        <div class="col team forecast home" :class="{ even: idx % 2 === 0 }">
+        <div class="col team forecast home" :class="{ even: idx % 2 === 0, 'first-col': idx == 0 }">
           {{ forecast.team1_goals }}
 
           <div
@@ -205,8 +207,8 @@ function calculateUserPoints(user_id: number): number {
     const forecast = findForecastByUserAndMatch(user_id, matchResult.id!)!
 
     const results = {
-      team1_goals: matchResult.team1_goals,
-      team2_goals: matchResult.team2_goals,
+      team1_goals: matchResult.team1_goals!,
+      team2_goals: matchResult.team2_goals!,
     }
     const prediction = { team1_goals: forecast.team1_goals!, team2_goals: forecast.team2_goals! }
 
@@ -258,8 +260,8 @@ function calculateSingleMatchPoints(forecast: IUserForecastSimple): number {
   }
 
   const results = {
-    team1_goals: matchResult.team1_goals,
-    team2_goals: matchResult.team2_goals,
+    team1_goals: matchResult.team1_goals!,
+    team2_goals: matchResult.team2_goals!,
   }
   const prediction = { team1_goals: forecast.team1_goals!, team2_goals: forecast.team2_goals! }
 
@@ -347,18 +349,19 @@ function scrollToNearestMatchToDate() {
 .col.rank {
   position: sticky;
   left: 0;
-  width: 18px;
+  width: 24px;
   z-index: 2;
 }
 .col.username {
   position: sticky;
-  left: 18px;
+  left: 24px;
+  border-right: 1px dashed black;
   width: 90px;
   z-index: 2;
 }
 .col.points {
   position: sticky;
-  left: 108px;
+  left: 114px;
   z-index: 2;
 }
 .col-span-2 {
@@ -386,10 +389,13 @@ function scrollToNearestMatchToDate() {
   border-style: dashed;
   border-left: 1px dashed white;
   background: transparent;
-  padding: 2px 0;
+  padding-top: 2px;
 }
 .row.header .col.rank {
   border-left-style: solid;
+}
+.row.header .col.rank span {
+  transform: rotate(-90deg);
 }
 .row.header .col.rank,
 .row.header .col.username,
@@ -413,6 +419,9 @@ function scrollToNearestMatchToDate() {
   background: #119977;
   color: white;
 }
+.row.header .match:first-child {
+  border-left-width: 0;
+}
 .row.header .match.even {
   background: #2d61b6;
 }
@@ -424,7 +433,12 @@ function scrollToNearestMatchToDate() {
   width: 100%;
 }
 .row.header .team {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
   width: 100%;
+  height: 100%;
 }
 .row.header .team .team-name {
   font-size: 12px;
@@ -446,7 +460,7 @@ function scrollToNearestMatchToDate() {
   border-bottom: 1px solid black;
 }
 .row.forecast-data .col {
-  padding: 4px 0;
+  padding: 12px 0;
   border-left-style: dashed;
   line-height: 1;
 }
@@ -460,6 +474,9 @@ function scrollToNearestMatchToDate() {
 
 .row.forecast-data .col.team {
   position: relative;
+}
+.forecast-data .col.team.first-col {
+  border-left-width: 0 !important;
 }
 .row.forecast-data .col.team.visitor {
   border-left-width: 2px;
