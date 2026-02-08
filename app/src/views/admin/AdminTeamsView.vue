@@ -1,13 +1,12 @@
 <template>
-  <h2>Administrar Equipos</h2>
-  <LoadingComponent message="Cargando Equipos..." v-if="isLoading"></LoadingComponent>
+  <LoadingComponent :message="loadingMessage"></LoadingComponent>
+  <AlertComponent :data="alert.data"></AlertComponent>
 
-  <div v-if="errorMessage">
-    <LoadingComponent :message="errorMessage"></LoadingComponent>
-    <button @click="getTeams()">Intentar nuevamente</button>
-  </div>
-
-  <div class="main-content" v-if="!isLoading && !errorMessage">
+  <h2>
+    Equipos ({{ teamsData.length }})
+    <button v-if="alert.data.message" @click="getTeams()">Intentar nuevamente</button>
+  </h2>
+  <div class="main-content">
     <div v-if="!teamsData[0]?.id">
       Equipos: <input type="number" min="1" name="teams-number" v-model="teamsNumber" />
     </div>
@@ -46,24 +45,25 @@
 </template>
 
 <script setup lang="ts">
+import AlertComponent from '@/components/AlertComponent.vue'
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import type { ITeamModel } from '@/model/ITeam'
 import { TeamService } from '@/services/team.service'
+import { alert } from '@/utils/utils'
 import { onMounted, ref, watch } from 'vue'
 
 const teamsNumber = ref<number>(1)
 const teamsData = ref<ITeamModel[]>([])
 
-const isLoading = ref<boolean>(false)
-const errorMessage = ref<string>()
+const loadingMessage = ref<string>()
 
 onMounted(() => {
   getTeams()
 })
 
 function getTeams() {
-  isLoading.value = true
-  errorMessage.value = undefined
+  loadingMessage.value = 'Cargando Equipos...'
+  alert.value.reset()
 
   TeamService.list()
     .then((data: ITeamModel[]) => {
@@ -77,26 +77,32 @@ function getTeams() {
       teamsData.value = data.length > 0 ? data : initialData
     })
     .catch((e) => {
-      errorMessage.value = 'Error: No se pudieron obtener datos'
+      alert.value.data = {
+        header: 'Error',
+        message: 'No se pudieron obtener datos',
+      }
     })
     .finally(() => {
-      isLoading.value = false
+      loadingMessage.value = undefined
     })
 }
 
 function saveTeamsData() {
-  isLoading.value = true
-  errorMessage.value = undefined
+  loadingMessage.value = 'Guardando equipo(s)'
+  alert.value.reset()
 
   TeamService.insert(teamsData.value)
     .then((data) => {
       console.log(data)
     })
     .catch((e) => {
-      errorMessage.value = 'Error: No se pudieron guardar los Equipos ' + e
+      alert.value.data = {
+        header: 'Error',
+        message: 'No se pudieron guardar los Equipos ' + e,
+      }
     })
     .finally(() => {
-      isLoading.value = false
+      loadingMessage.value = undefined
     })
 }
 

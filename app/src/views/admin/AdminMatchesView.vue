@@ -1,17 +1,13 @@
 <template>
-  <h2>Administrar partidos</h2>
+  <LoadingComponent :message="loadingMessage"></LoadingComponent>
+  <AlertComponent :data="alert.data"></AlertComponent>
 
-  <LoadingComponent message="Cargando Partidos..." v-if="isLoading"></LoadingComponent>
-
-  <div v-if="errorMessage">
-    <LoadingComponent :message="errorMessage"></LoadingComponent>
-  </div>
-
+  <h2>Partidos</h2>
   <h3>Agregar Partidos</h3>
-  <div>Partidos: <input type="number" min="1" v-model="matchesNumber" /></div>
-  <div v-if="!isLoading && !errorMessage && matchesPostData.length">
+  <div style="margin-left: 20px" v-if="matchesPostData.length">
+    <div>Partidos: <input type="number" min="1" v-model="matchesNumber" /></div>
     <div class="row header">
-      <div class="col index">No.</div>
+      <div class="col index">#</div>
       <div class="col">Local</div>
       <div class="col">Visitante</div>
       <div class="col">Fecha</div>
@@ -29,15 +25,15 @@
         </select>
       </div>
       <div class="col">
-        <input type="date" v-model="match.date" @change="updateLastSavedDate($event)"/>
+        <input type="date" v-model="match.date" @change="updateLastSavedDate($event)" />
       </div>
     </div>
     <button @click="saveMatchesData()">Guardar</button>
   </div>
 
   <div class="main-content">
-    <h2>Partidos actuales</h2>
-    <div class="form matches" v-if="!isLoading && !errorMessage && matchesData.length">
+    <h2>Partidos ({{ matchesData.length }})</h2>
+    <div class="form matches" v-if="matchesData.length">
       <div class="row header">
         <div class="col index">ID</div>
         <div class="col team">Local</div>
@@ -48,13 +44,17 @@
       <div class="row" v-for="match in matchesData" :key="match.id">
         <div class="col index">{{ match.id }}</div>
         <div class="col team">
-          <select name="local" :id="'local-team-'+match.team1_id" v-model="match.team1_id">
-            <option :value="team.id" v-for="team in teamsData" :key="team.id">{{ team.name }}</option>
+          <select name="local" :id="'local-team-' + match.team1_id" v-model="match.team1_id">
+            <option :value="team.id" v-for="team in teamsData" :key="team.id">
+              {{ team.name }}
+            </option>
           </select>
         </div>
         <div class="col team">
-          <select name="visitant" :id="'visitant-team-'+match.team2_id" v-model="match.team2_id">
-            <option :value="team.id" v-for="team in teamsData" :key="team.id">{{ team.name }}</option>
+          <select name="visitant" :id="'visitant-team-' + match.team2_id" v-model="match.team2_id">
+            <option :value="team.id" v-for="team in teamsData" :key="team.id">
+              {{ team.name }}
+            </option>
           </select>
         </div>
         <div class="col date">
@@ -69,14 +69,15 @@
 </template>
 
 <script setup lang="ts">
+import AlertComponent from '@/components/AlertComponent.vue'
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import type { IMatchModel } from '@/model/IMatch'
 import type { ITeamModel } from '@/model/ITeam'
 import { MatchService } from '@/services/match.service'
+import { alert } from '@/utils/utils'
 import { onMounted, ref, watch } from 'vue'
 
-const isLoading = ref<boolean>(false)
-const errorMessage = ref<string>()
+const loadingMessage = ref<string>()
 
 const matchesNumber = ref<number>(1)
 const matchesPostData = ref<IMatchModel[]>([])
@@ -95,11 +96,15 @@ const INITIAL_MATCH_DATA = {
 const teamsData = ref<ITeamModel[]>([])
 
 onMounted(() => {
+  alert.value.reset()
   const _teamsData: ITeamModel[] = JSON.parse(localStorage.getItem('teamsData') || '[]')
 
   if (!_teamsData.length) {
-    return (errorMessage.value =
-      'Error: No teams data was found in localstorage, please add them first in the Teams tab')
+    alert.value.data = {
+      header: 'Error',
+      message: 'No teams data was found in localstorage, please add them first in the Teams tab',
+    }
+    return
   }
 
   teamsData.value = _teamsData
@@ -123,24 +128,27 @@ watch(matchesNumber, (newVal) => {
 })
 
 function getMatches() {
-  isLoading.value = true
-  errorMessage.value = undefined
+  loadingMessage.value = 'Obteniendo Partidos...'
+  alert.value.reset()
 
   MatchService.list(true)
     .then((data) => {
-      matchesData.value = data/* .sort((a, b) => a.id! - b.id!) */
+      matchesData.value = data /* .sort((a, b) => a.id! - b.id!) */
     })
     .catch((e) => {
-      errorMessage.value = 'Error: No se pudieron obtener los Partidos'
+      alert.value.data = {
+        header: 'Error',
+        message: 'No se pudieron obtener los Partidos',
+      }
     })
     .finally(() => {
-      isLoading.value = false
+      loadingMessage.value = ''
     })
 }
 
 async function saveMatchesData() {
-  isLoading.value = true
-  errorMessage.value = undefined
+  loadingMessage.value = 'Guardando Partidos...'
+  alert.value.reset()
 
   MatchService.insert(matchesPostData.value)
     .then((isOk) => {
@@ -157,16 +165,19 @@ async function saveMatchesData() {
       getMatches()
     })
     .catch((e) => {
-      errorMessage.value = e
+      alert.value.data = {
+        header: 'Error',
+        message: 'No se pudo crear los Partidos. ' + e,
+      }
     })
     .finally(() => {
-      isLoading.value = false
+      loadingMessage.value = ''
     })
 }
 
 function updateMatch(match: IMatchModel) {
-  isLoading.value = true
-  errorMessage.value = undefined
+  loadingMessage.value = 'Actualizando Partidos...'
+  alert.value.reset()
 
   MatchService.update(match)
     .then((isOk) => {
@@ -183,14 +194,17 @@ function updateMatch(match: IMatchModel) {
       getMatches()
     })
     .catch((e) => {
-      errorMessage.value = e
+      alert.value.data = {
+        header: 'Error',
+        message: 'No se pudo actualizar el Partido.' + e,
+      }
     })
     .finally(() => {
-      isLoading.value = false
+      loadingMessage.value = undefined
     })
 }
 
-function updateLastSavedDate(event: any){
+function updateLastSavedDate(event: any) {
   lastSavedDate = event.target.value
 }
 </script>

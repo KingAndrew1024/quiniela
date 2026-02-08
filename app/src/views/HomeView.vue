@@ -1,56 +1,109 @@
 <template>
-  <div class="table">
-    <div class="row header">
-      <div class="col rank" @click="sortByPoints()">
-        <span>Puntos</span>
-      </div>
-      <div class="col username bold" @click="sortByUser()">Usuario</div>
-      <!-- <div class="col points bold" @click="sortByPoints()">Puntos</div> -->
-      <div
-        class="col col-span-2 match"
-        :class="{ even: idx % 2 === 0, 'not-played': !match.played }"
-        v-for="(match, idx) in MatchesWithTeamName"
-      >
-        <div class="flags-score">
-          <div class="flag" :class="match.team1_code" :title="match.team1_name"></div>
-          {{ match.date }}
-          <div class="flag" :class="match.team2_code" :title="match.team2_name"></div>
-        </div>
-        <div class="flex-row">
-          <div class="team bold">
-            <div class="team-name">{{ match.team1_name }}</div>
-            {{ match.played ? match.team1_goals : '--' }}
-          </div>
-          <div class="team bold">
-            <div class="team-name">{{ match.team2_name }}</div>
-            {{ match.played ? match.team2_goals : '--' }}
-          </div>
-        </div>
-      </div>
+  <div id="main">
+    <div class="pull-to-refresh">
+      <span class="loader"></span>
     </div>
+    <div class="backdrop" v-if="showWelcome"></div>
+    <div id="welcome-message-wrapper" v-if="showWelcome">
+      <header>
+        <h3>BIENVENID@</h3>
+      </header>
+      <main class="main">
+        ¡Gracias por participar en esta Quiniela 2026!
+        <div id="instructions">
+          <h3>Instrucciones</h3>
+          <div>Por cada partido obtendrás:</div>
+          <ul>
+            <li>
+              <div class="match-points-wrapper three">
+                <span class="match-points"> 3 </span>
+              </div>
+              <div class="instruction-row">
+                Puntos si atinaste <strong>al marcador exacto</strong>
+              </div>
+            </li>
+            <li>
+              <div class="match-points-wrapper one">
+                <span class="match-points"> 1 </span>
+              </div>
+              <div class="instruction-row">
+                Punto si sólo atinaste <strong>al equipo ganador</strong>
+              </div>
+            </li>
+            <li>
+              <div class="match-points-wrapper" style="transform: none; border: 0">0</div>
+              <div class="instruction-row">Puntos en cualquier otro caso</div>
+            </li>
+          </ul>
+        </div>
+      </main>
+      <footer>
+        <button @click="closeWelcome">Entendido</button>
+      </footer>
+    </div>
+    <button id="open-welcome" class="fab" @click="showWelcome = true" v-if="welcomeScreen">
+      ?
+    </button>
 
-    <div class="row forecast-data" v-for="(data, idx) in userForecasts">
-      <div class="col rank">{{ data.user_points }}</div>
-      <div class="col username" id="user">{{ data.user_name }}</div>
-      <!-- <div class="col points" id="points">{{ data.user_points }}</div> -->
-      <template v-for="(forecast, idx) in data.forecasts">
-        <div class="col team forecast home" :class="{ even: idx % 2 === 0, 'first-col': idx == 0 }">
-          {{ forecast.team1_goals }}
-
-          <div
-            v-if="forecast.match_points > 0"
-            class="match-points-wrapper"
-            :class="{ one: forecast.match_points == 1, three: forecast.match_points == 3 }"
-          >
-            <span class="match-points">
-              {{ forecast.match_points }}
-            </span>
+    <div class="table" v-if="welcomeScreen && userForecasts.length">
+      <div class="row header">
+        <div class="col rank" @click="sortByPoints()">
+          <span>Puntos</span>
+        </div>
+        <div class="col username bold" @click="sortByUser()">Usuario</div>
+        <!-- <div class="col points bold" @click="sortByPoints()">Puntos</div> -->
+        <div
+          class="col col-span-2 match"
+          :class="[
+            { even: idx % 2 === 0, 'not-played': !match.played },
+            match.date.split(' ').join('-'),
+          ]"
+          v-for="(match, idx) in MatchesWithTeamName"
+        >
+          <div class="flags-score">
+            <div class="flag" :class="match.team1_code" :title="match.team1_name"></div>
+            {{ match.date }}
+            <div class="flag" :class="match.team2_code" :title="match.team2_name"></div>
+          </div>
+          <div class="flex-row">
+            <div class="team bold">
+              <div class="team-name">{{ match.team1_name }}</div>
+              {{ match.played ? match.team1_goals : '--' }}
+            </div>
+            <div class="team bold">
+              <div class="team-name">{{ match.team2_name }}</div>
+              {{ match.played ? match.team2_goals : '--' }}
+            </div>
           </div>
         </div>
-        <div class="col team forecast visitor" :class="{ even: idx % 2 === 0 }">
-          {{ forecast.team2_goals }}
-        </div>
-      </template>
+      </div>
+
+      <div class="row forecast-data" v-for="(data, idx) in userForecasts">
+        <div class="col rank">{{ data.user_points }}</div>
+        <div class="col username" id="user">{{ data.user_name }}</div>
+        <!-- <div class="col points" id="points">{{ data.user_points }}</div> -->
+        <template v-for="(forecast, idx) in data.forecasts">
+          <div
+            class="col team forecast home"
+            :class="{ even: idx % 2 === 0, 'first-col': idx == 0 }"
+          >
+            {{ forecast.team1_goals }}
+
+            <div
+              v-if="forecast.match_points > 0"
+              class="match-points-wrapper"
+              :class="{ one: forecast.match_points == 1, three: forecast.match_points == 3 }"
+            >
+              <span class="match-points">
+                {{ forecast.match_points }}
+              </span>
+            </div>
+          </div>
+          <div class="col team forecast visitor" :class="{ even: idx % 2 === 0 }">
+            {{ forecast.team2_goals }}
+          </div>
+        </template>
+      </div>
     </div>
   </div>
 </template>
@@ -60,12 +113,14 @@ import type { IForecastModel } from '@/model/IForecast'
 import type { IMatchModel } from '@/model/IMatch'
 import type { IUserModel } from '@/model/interfaces'
 import type { ITeamModel } from '@/model/ITeam'
-import router from '@/router'
 import { ForecastService } from '@/services/forecast.service'
 import { MatchService } from '@/services/match.service'
 import { TeamService } from '@/services/team.service'
 import { UserService } from '@/services/user.service'
 import { onMounted, ref } from 'vue'
+
+const welcomeScreen = ref<boolean>(localStorage.getItem('welcomeScreen') == 'true')
+const showWelcome = ref<boolean>(false)
 
 let matches: IMatchModel[] = []
 let users: IUserModel[] = []
@@ -104,78 +159,90 @@ const daysOfWeekMap: { [k: number]: string } = {
   0: 'Dom',
   1: 'Lun',
   2: 'Mar',
-  3: 'Mié',
+  3: 'Mie',
   4: 'Jue',
   5: 'Vie',
-  6: 'Sáb',
+  6: 'Sab',
 }
 
 onMounted(async () => {
-  setBackground()
-  try {
-    TeamService.list()
-      .then(async (data) => {
-        teams = data
-
-        //MatchesWithTeamName depends on teams data (to set the teams' names)
-        matches = await MatchService.list(true)
-        /* matches.sort((a, b) => {
-          const aDay = +a.date.split('-')[2]!;
-          const bDay = +b.date.split('-')[2]!;
-           return bDay - aDay
-        }) */
-
-        MatchesWithTeamName.value = setMatchesWithTeamName()
-
-        UserService.list()
-          .then(async (data) => {
-            users = data
-
-            forecasts = await ForecastService.list()
-            //userForecasts depends on users'd data
-            users.forEach((user) => {
-              userForecasts.value.push({
-                rank: 0,
-                user_name: user.name,
-                user_points: calculateUserPoints(user.id!),
-                forecasts: extractUserForecasts(user.id!),
-              })
-            })
-            //sorting
-            userForecasts.value.sort((a, b) =>
-              rankSorting == 'ASC' ? b.user_points - a.user_points : a.user_points - b.user_points,
-            )
-            userForecasts.value.forEach((uf, idx) => {
-              uf.rank = idx + 1
-            })
-
-            scrollToNearestMatchToDate()
-          })
-          .catch((e) => {
-            throw e
-          })
-      })
-      .catch((e) => {
-        throw e
-      })
-  } catch (error) {
-    console.error(error)
+  if (!welcomeScreen.value) {
+    setTimeout(() => {
+      showWelcome.value = true
+      localStorage.setItem('welcomeScreen', 'true')
+    }, 1500)
   }
+
+  loadData()
+
+  setPull2Refresh()
 })
 
-function setBackground() {
-  const htmlElement = document.querySelector('html')!
-  htmlElement.style.backgroundImage = 'url(./home-bg.webp)'
-  htmlElement.style.backgroundRepeat = 'no-repeat'
-  htmlElement.style.backgroundSize = 'cover'
-  htmlElement.style.backgroundPosition = 'center'
+function loadData(): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    userForecasts.value = []
+    try {
+      TeamService.list()
+        .then(async (data) => {
+          teams = data
+
+          //MatchesWithTeamName depends on teams data (to set the teams' names)
+          matches = await MatchService.list(true)
+          /* matches.sort((a, b) => {
+            const aDay = +a.date.split('-')[2]!;
+            const bDay = +b.date.split('-')[2]!;
+             return bDay - aDay
+          }) */
+
+          MatchesWithTeamName.value = setMatchesWithTeamName(matches)
+
+          UserService.list()
+            .then(async (data) => {
+              users = data
+
+              forecasts = await ForecastService.list()
+              //userForecasts depends on users'd data
+              users.forEach((user) => {
+                userForecasts.value.push({
+                  rank: 0,
+                  user_name: user.name,
+                  user_points: calculateUserPoints(user.id!),
+                  forecasts: extractUserForecasts(user.id!),
+                })
+              })
+              //sorting
+              userForecasts.value.sort((a, b) =>
+                rankSorting == 'ASC'
+                  ? b.user_points - a.user_points
+                  : a.user_points - b.user_points,
+              )
+              userForecasts.value.forEach((uf, idx) => {
+                uf.rank = idx + 1
+              })
+
+              setTimeout(() => {
+                scrollToNearestMatchToDate()
+              }, 500)
+              resolve(true)
+            })
+            .catch((e) => {
+              throw e
+            })
+        })
+        .catch((e) => {
+          throw e
+        })
+    } catch (error) {
+      console.error(error)
+    }
+  })
 }
 
 function findForecastByUserAndMatch(userId: number, matchId: number): IForecastModel | undefined {
   return forecasts.find((forecast) => forecast.user_id == userId && forecast.match_id === matchId)
 }
 
-function setMatchesWithTeamName(): IMatcWithTeamName[] {
+function setMatchesWithTeamName(matches: IMatchModel[]): IMatcWithTeamName[] {
   return matches.map((match) => {
     const team1 = teams.find((team) => team.id === match.team1_id)!
     const team2 = teams.find((team) => team.id === match.team2_id)!
@@ -306,27 +373,130 @@ function sortByUser() {
 }
 
 function scrollToNearestMatchToDate() {
-  // Get the root element
-  const root = document.documentElement
-  // Get the computed style of the root element
-  const computedStyles = window.getComputedStyle(root)
-  // Retrieve the value of the custom property
-  const columnWidth = (computedStyles.getPropertyValue('--team-col-w') || '').replace('px', '')
+  const d = new Date('06-12-2026')
+  const dateStr = d.toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }).split(',')[0]!
+  const dateStrComps = dateStr.split('/')
 
-  const table = document.querySelector('.table')!
-  table.scrollTo({
-    left: +columnWidth * 2,
-    behavior: 'smooth',
+  const date = new Date(`${dateStrComps[1]}-${dateStrComps[0]}-${dateStrComps[2]}`)
+  const dayOfMonth = date.getDate()
+  const dayOfWeek = date.getDay()
+
+  const targetClass = `${daysOfWeekMap[dayOfWeek]}-${dayOfMonth}`
+  const targetElement = document.querySelector(`.${targetClass}`)
+
+  const table = document.querySelector('.table')
+  if (table && targetElement) {
+    const colRank: HTMLElement = document.querySelector('.col.rank')!
+    const colUsername: HTMLElement = document.querySelector('.col.username')!
+    table?.scrollTo({
+      left:
+        targetElement.getBoundingClientRect().x - colRank.offsetWidth - colUsername.offsetWidth - 4, //the left padding!
+      behavior: 'smooth',
+    })
+  }
+}
+
+function closeWelcome() {
+  setTimeout(() => {
+    showWelcome.value = false
+  }, 200)
+  welcomeScreen.value = true
+
+  if (localStorage.getItem('welcomeScreen') != 'true') {
+    localStorage.setItem('welcomeScreen', 'true')
+    setTimeout(() => {
+      scrollToNearestMatchToDate()
+    }, 500)
+  }
+}
+
+function setPull2Refresh() {
+  const pullToRefresh = document.querySelector('.pull-to-refresh') as HTMLElement
+  let touchstartY = 0
+  let delta = 0
+  const maxDistance = window.screen.height / 5
+
+  const loader: HTMLElement = document.querySelector('.loader')!
+
+  if (!pullToRefresh) {
+    return console.log('NO PULL TO REFRESH :(')
+  }
+
+  document.addEventListener('touchstart', (e) => {
+    touchstartY = e.touches[0]!.clientY
+    delta = 0
   })
+
+  document.addEventListener('touchmove', (e) => {
+    const touchY = e.touches[0]!.clientY
+    const touchDiff = touchY - touchstartY
+
+    if (touchDiff && window.scrollY === 0) {
+      delta = Math.round(easeOutExpo((touchDiff - 20) / 1000, -40, maxDistance, 1.5))
+
+      loader.style.transform = `rotateZ(${delta * 1.5}deg)`
+
+      if (delta > -40 && delta < maxDistance) {
+        pullToRefresh.classList.add('visible')
+        pullToRefresh.style.top = `${delta}px`
+      } else if (delta < 80) {
+        pullToRefresh.classList.add('visible')
+        pullToRefresh.style.top = `${delta}px`
+      }
+      e.preventDefault()
+    }
+  })
+  document.addEventListener('touchend', (e) => {
+    pullToRefresh.classList.remove('visible')
+    if (delta > 70) {
+      loader.classList.add('load')
+
+      const table = document.querySelector('.table')
+      table?.scrollTo({
+        left: 0,
+        behavior: 'smooth',
+      })
+
+      loadData().finally(() => {
+        pullToRefresh.style.top = '-60px'
+        setTimeout(() => {
+          loader.classList.remove('load')
+        }, 500)
+      })
+    } else {
+      pullToRefresh.style.top = '-60px'
+    }
+  })
+}
+
+/**
+ * Function used to animate a {@link Reel}
+ * @param {number} t elapsedtime
+ * @param {number} b start position
+ * @param {number} c end position
+ * @param {number} d animate duration
+ * @returns {number} position at time t
+ * @see {@link https://spicyyoghurt.com/tools/easing-functions|More easing functions }
+ */
+function easeOutExpo(t: number, b: number, c: number, d: number): number {
+  return t == d ? b + c : c * (-Math.pow(2, (-10 * t) / d) + 1) + b
 }
 </script>
 
 <style scoped>
+#main {
+  display: flex;
+  background: url(main-bg-2.jpg) no-repeat bottom;
+  background-size: cover;
+  padding: 4px;
+  width: 100%;
+  height: 100%;
+}
 .table {
-  margin: auto;
-  margin-top: 4px;
-  max-width: 98%;
-  max-height: 98%;
+  margin: 0 auto;
+  max-width: 100%;
+  max-height: 100%;
+  height: min-content;
   overflow: auto;
 }
 .row.header {
@@ -349,19 +519,14 @@ function scrollToNearestMatchToDate() {
 .col.rank {
   position: sticky;
   left: 0;
-  width: 24px;
+  width: 30px;
   z-index: 2;
 }
 .col.username {
   position: sticky;
-  left: 24px;
+  left: 30px;
   border-right: 1px dashed black;
-  width: 90px;
-  z-index: 2;
-}
-.col.points {
-  position: sticky;
-  left: 114px;
+  width: 150px;
   z-index: 2;
 }
 .col-span-2 {
@@ -375,7 +540,7 @@ function scrollToNearestMatchToDate() {
 
 .col.team {
   width: var(--team-col-w);
-  background-color: #ffffffee;
+  background-color: #ffffffef;
 }
 
 .col.bold {
@@ -416,14 +581,14 @@ function scrollToNearestMatchToDate() {
   border-right: 1px solid black;
 }
 .row.header .match {
-  background: #119977;
+  background: #119977ef;
   color: white;
 }
 .row.header .match:first-child {
   border-left-width: 0;
 }
 .row.header .match.even {
-  background: #2d61b6;
+  background: #2d61b6ef;
 }
 .row.header .match .flags-score {
   display: flex;
@@ -481,6 +646,7 @@ function scrollToNearestMatchToDate() {
 .row.forecast-data .col.team.visitor {
   border-left-width: 2px;
   border-left-color: #119977;
+  border-left-style: solid;
 }
 .row.forecast-data .col.team.even.visitor {
   border-left-color: #2d61b6;
@@ -532,5 +698,206 @@ span.match-points {
   border: 1px solid white;
   background-position: center;
   background-color: black;
+}
+
+.backdrop {
+  opacity: 0.5;
+}
+
+#welcome-message-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 110%;
+  bottom: 50%;
+  left: 0;
+  right: 0;
+  color: #000000;
+  border-radius: 8px;
+  box-shadow: 0 0 16px 2px #0095ff;
+  width: 70%;
+  max-width: 600px;
+  animation: moveAbsolute 0.8s forwards;
+  margin: 0 auto;
+  height: 400px;
+  overflow: hidden;
+  z-index: 99999;
+}
+
+@keyframes moveAbsolute {
+  from {
+    top: 110%;
+  }
+  to {
+    top: 50%;
+    margin: 0 auto;
+    transform: translate(0, -50%);
+  }
+}
+
+#welcome-message-wrapper header {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+#welcome-message-wrapper header,
+#welcome-message-wrapper main {
+  background: #ffffff;
+  opacity: 0.95;
+}
+#welcome-message-wrapper header,
+#welcome-message-wrapper main,
+#welcome-message-wrapper footer {
+  text-align: center;
+  width: 100%;
+}
+
+#welcome-message-wrapper header {
+  text-align: center;
+}
+#welcome-message-wrapper main {
+  padding: 2px 4px 4px 4px;
+  flex: 1;
+}
+#welcome-message-wrapper main ul {
+  list-style-type: none;
+  text-align: left;
+  margin: 6px auto auto;
+  padding: 0 0 0 4px;
+  width: 70%;
+}
+#welcome-message-wrapper main ul li {
+  display: flex;
+  align-items: center;
+  text-align: left;
+  padding: 6px 0;
+}
+#welcome-message-wrapper .match-points-wrapper {
+  display: inline-flex;
+  position: initial;
+  margin: initial;
+  margin-right: 4px;
+  width: 18px;
+  height: 18px;
+}
+#welcome-message-wrapper .instruction-row {
+  padding-left: 5px;
+}
+#welcome-message-wrapper footer {
+  height: 32px;
+}
+#welcome-message-wrapper footer button {
+  background: #119977;
+  text-transform: uppercase;
+  font-weight: bold;
+  color: white;
+  border: 2px solid white;
+  border-radius: 8px;
+  border-top-width: 0;
+  border-top-right-radius: 0;
+  border-top-left-radius: 0;
+  height: 100%;
+  width: 100%;
+}
+#welcome-message-wrapper footer button:active {
+  background: #2d61b6;
+}
+
+#open-welcome.fab:active {
+  background: #119977;
+}
+#open-welcome.fab {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: #0095ff;
+  border: 1px solid white;
+  box-shadow: 0 0 16px 2px white;
+  border-radius: 50px;
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+  width: 36px;
+  height: 36px;
+}
+
+@media screen and (max-width: 500px) {
+  .col.rank {
+    width: 28px;
+  }
+  .col.username {
+    left: 28px;
+    width: 110px;
+  }
+
+  #welcome-message-wrapper {
+    width: 90%;
+    height: 75%;
+  }
+  #welcome-message-wrapper * {
+    font-size: 18px;
+  }
+
+  #welcome-message-wrapper main ul {
+    width: 100%;
+  }
+}
+
+.pull-to-refresh {
+  position: fixed;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  object-fit: contain;
+  background: whitesmoke;
+  border-radius: 50px;
+  margin-left: auto;
+  margin-right: auto;
+  right: 0;
+  left: 0;
+}
+.pull-to-refresh:not(.visible) {
+  top: -60px;
+  transition: top 0.5s ease-in-out;
+}
+
+.loader {
+  width: 40px;
+  height: 40px;
+  border: 6px solid #ff0000;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  position: relative;
+  box-sizing: border-box;
+}
+.loader.load {
+  animation: rotation 1s linear infinite;
+}
+.loader::after {
+  content: '';
+  position: absolute;
+  box-sizing: border-box;
+  left: 13px;
+  top: 23px;
+  border: 8px solid transparent;
+  border-right-color: #ff0000;
+  transform: rotate(-40deg);
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>

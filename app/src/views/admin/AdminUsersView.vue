@@ -1,8 +1,9 @@
 <template>
-  <LoadingComponent :message="loadingMessage" v-if="loadingMessage"></LoadingComponent>
-  <LoadingComponent :message="errorMessage" v-if="errorMessage"></LoadingComponent>
+  <LoadingComponent :message="loadingMessage"></LoadingComponent>
+  <AlertComponent :data="alert.data"></AlertComponent>
 
-  <div class="form">
+  <h2>Usuarios ({{ userList.length }})</h2>
+  <div class="form" v-if="userList.length">
     <div class="row header">
       <div class="col id">#</div>
       <div class="col name">Nombre</div>
@@ -19,7 +20,13 @@
         <input type="text" name="user" id="user" v-model="user.user" />
       </div>
       <div class="col password">
-        <input type="text" name="password" id="password" placeholder="* * * *" v-model="user.password" />
+        <input
+          type="text"
+          name="password"
+          id="password"
+          placeholder="* * * *"
+          v-model="user.password"
+        />
       </div>
       <div class="col action">
         <button @click="updateUser(user)" :disabled="!!loadingMessage">Actualizar</button>
@@ -29,26 +36,31 @@
 </template>
 
 <script setup lang="ts">
+import AlertComponent from '@/components/AlertComponent.vue'
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import type { IUserModel } from '@/model/interfaces'
 import { UserService } from '@/services/user.service'
+import { alert } from '@/utils/utils'
 import { onMounted, ref } from 'vue'
 
 const loadingMessage = ref<string>()
-const errorMessage = ref<string>()
 
 const userList = ref<IUserModel[]>([])
 
 onMounted(() => {
   loadingMessage.value = 'Cargando usuarios...'
-  errorMessage.value = undefined
+  alert.value.reset()
 
   UserService.list()
     .then((data) => {
       userList.value = data
     })
     .catch((e) => {
-      errorMessage.value = 'No se pudieron cargar los usuarios' + e
+      alert.value.data = {
+        header: 'Error',
+        message: 'No se pudieron cargar los usuarios' + e,
+      }
+
       console.log(e)
     })
     .finally(() => {
@@ -58,17 +70,22 @@ onMounted(() => {
 
 function updateUser(user: IUserModel) {
   loadingMessage.value = 'Actualizando usuario...'
-  errorMessage.value = undefined
+  alert.value.reset()
 
   UserService.update(user)
     .then((response) => {
-      if(!response.updated) {
+      if (!response.updated) {
         throw Error('desconocido')
       }
     })
     .catch((e) => {
       const errStr = 'No se pudo actualizar al usuario '
-      errorMessage.value = errStr + e
+
+      alert.value.data = {
+        header: 'Error',
+        message: errStr + e,
+      }
+
       console.error(errStr, e)
     })
     .finally(() => {

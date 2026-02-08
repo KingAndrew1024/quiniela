@@ -1,0 +1,13 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  #if the app is on a subdirectory
+  RewriteBase /quiniela2026/ 
+
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  
+  # Otherwise, rewrite the URL to index.html and let Vue Router handle the routing
+  RewriteRule . /quiniela2026/index.html [L]
+</IfModule>

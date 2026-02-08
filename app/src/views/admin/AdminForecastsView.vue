@@ -1,19 +1,15 @@
 <template>
-  <h2>Crear Quiniela</h2>
+  <LoadingComponent :message="loadingMessage"></LoadingComponent>
+  <AlertComponent :data="alert.data"></AlertComponent>
+
+  <h2>Quiniela</h2>
   <div>
     <button :disabled="currentView == 'create'" @click="showCreateUser()">Crear usuario</button>
     <button :disabled="currentView == 'update'" @click="showList()">Actualizar quinielas</button>
   </div>
-
-  <LoadingComponent :message="loadingMessage" v-if="isLoading"></LoadingComponent>
-
-  <div v-if="errorMessage">
-    <LoadingComponent :message="errorMessage"></LoadingComponent>
-  </div>
-
   <div class="main-content">
     <!-- Create User form -->
-    <div class="form user" v-if="!isLoading && currentView == 'create'">
+    <div class="form user" v-if="currentView == 'create'">
       <h3>Datos del usuario</h3>
       <div class="row">
         Nombre: <input type="text" :disabled="!!userPostData.id" v-model="userPostData.name" />
@@ -34,8 +30,8 @@
     </div>
 
     <!-- USERS LIST -->
+    <h3 v-if="currentView == 'update'">Usuarios ({{ usersData.length }})</h3>
     <div id="users-list-wrapper" v-if="currentView == 'update' && usersData.length">
-      <h3>Usuarios</h3>
       <div class="form">
         <div class="row header">
           <div class="col">ID</div>
@@ -95,6 +91,7 @@
 </template>
 
 <script setup lang="ts">
+import AlertComponent from '@/components/AlertComponent.vue'
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import type { IForecastModel } from '@/model/IForecast'
 import type { IMatchModel } from '@/model/IMatch'
@@ -102,11 +99,10 @@ import type { ITeamModel } from '@/model/ITeam'
 import type { IUserGetModel, IUserPostModel } from '@/model/IUser'
 import { ForecastService } from '@/services/forecast.service'
 import { UserService } from '@/services/user.service'
+import { alert } from '@/utils/utils'
 import { computed, onMounted, ref } from 'vue'
 
-const isLoading = ref<boolean>(false)
 const loadingMessage = ref<string>()
-const errorMessage = ref<string>()
 
 const currentView = ref<'create' | 'update'>('create')
 
@@ -124,14 +120,20 @@ onMounted(async () => {
   const _teamsData: ITeamModel[] = JSON.parse(localStorage.getItem('teamsData') || '[]')
 
   if (!_teamsData.length) {
-    return (errorMessage.value =
-      'Error, no Teams data was found in localstorage, please add them first in the Teams tab')
+    alert.value.data = {
+      header: 'Error',
+      message: 'No Teams data was found in localstorage, please add them first in the Teams tab',
+    }
+
+    return
   }
 
-  if (!localStorage.getItem('hasMatchesData')) {
+  /*
+    const _matchesData: IMatchModel[] = JSON.parse(localStorage.getItem('matchesData') || '[]')
+    if (!_matchesData.length) {
     return (errorMessage.value =
       'Error, no Matches data was found in localstorage, please add them first in the Matches tab')
-  }
+  } */
 
   teamsData.value = _teamsData
   getMatchesData()
@@ -148,8 +150,8 @@ function showList() {
 }
 
 async function getForecastByUser(id: number) {
-  isLoading.value = true
-  errorMessage.value = undefined
+  loadingMessage.value = 'Cargando Quiniela...'
+  alert.value.reset()
 
   ForecastService.getByUser(id!)
     .then(async (data) => {
@@ -162,7 +164,7 @@ async function getForecastByUser(id: number) {
       currentView.value = 'update'
 
       const table = document.querySelector('#forecast-form-wrapper .form')!
-      if(table) {
+      if (table) {
         table.scrollTo({
           top: 0,
           behavior: 'smooth',
@@ -170,18 +172,17 @@ async function getForecastByUser(id: number) {
       }
     })
     .catch((e) => {
-      errorMessage.value = 'Error: No se pudo obtener las Quinielas'
+      alert.value.data = { header: 'Error', message: 'No se pudo obtener las Quinielas' }
       console.error(e)
     })
     .finally(() => {
-      isLoading.value = false
+      loadingMessage.value = undefined
     })
 }
 
 async function createUser() {
-  isLoading.value = true
   loadingMessage.value = 'Creando usuario...'
-  errorMessage.value = undefined
+  alert.value.reset()
 
   UserService.insert(userPostData.value)
     .then((r) => {
@@ -194,17 +195,16 @@ async function createUser() {
       }
     })
     .catch((e) => {
-      errorMessage.value = 'Error: No se pudo crear el usuario'
+      alert.value.data = { header: 'Error', message: 'No se pudo crear el usuario' }
     })
     .finally(() => {
       loadingMessage.value = undefined
-      isLoading.value = false
     })
 }
 
 function getMatchesData() {
   matchesData.value = JSON.parse(localStorage.getItem('matchesData') || '[]')
-  matchesData.value/* .sort((a, b) => a.id! - b.id!) */
+  matchesData.value /* .sort((a, b) => a.id! - b.id!) */
 
   matchesData.value.forEach((m) => {
     userForecast.value.push({
@@ -216,25 +216,24 @@ function getMatchesData() {
 }
 
 async function getUsersData() {
-  isLoading.value = true
-  errorMessage.value = undefined
+  loadingMessage.value = 'Cargando Usuarios...'
+  alert.value.reset()
 
   UserService.list()
     .then((list) => {
       usersData.value = list
     })
     .catch((e) => {
-      errorMessage.value = 'Error: No se pudo obtener los usuarios'
+      alert.value.data = { header: 'Error', message: 'No se pudo obtener los usuarios' }
     })
     .finally(() => {
-      isLoading.value = false
+      loadingMessage.value = undefined
     })
 }
 
 async function createForecast() {
-  isLoading.value = true
-  errorMessage.value = undefined
   loadingMessage.value = 'Creando Quiniela...'
+  alert.value.reset()
 
   const postData: IForecastModel[] = userForecast.value.map((d: IForecastModel) => ({
     ...d,
@@ -255,27 +254,26 @@ async function createForecast() {
       userForecast.value = []
     })
     .catch((e) => {
-      errorMessage.value = 'Error: No se pudo crear la quiniela'
+      alert.value.data = { header: 'Error', message: 'Error: No se pudo crear la quiniela' }
     })
     .finally(() => {
-      isLoading.value = false
+      loadingMessage.value = undefined
     })
 }
 
 function updateForecast() {
-  isLoading.value = true
-  errorMessage.value = undefined
   loadingMessage.value = 'Actualizando Quiniela...'
+  alert.value.reset()
 
   ForecastService.updateAll(userForecast.value)
     .then((isOk) => {
       console.log('Quiniela actualizada!')
     })
     .catch((e) => {
-      errorMessage.value = 'Error: No se pudo actualizar la Quiniela ' + e
+      alert.value.data = { header: 'Error', message: 'No se pudo actualizar la Quiniela ' + e }
     })
     .finally(() => {
-      isLoading.value = false
+      loadingMessage.value = undefined
     })
 }
 

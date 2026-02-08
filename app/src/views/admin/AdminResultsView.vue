@@ -1,8 +1,9 @@
 <template>
-  <LoadingComponent :message="loadingMessage" v-if="isLoading"></LoadingComponent>
-  <LoadingComponent :message="errorMessage" v-if="errorMessage"></LoadingComponent>
+  <LoadingComponent :message="loadingMessage"></LoadingComponent>
+  <AlertComponent :data="alert.data"></AlertComponent>
 
-  <div class="form">
+  <h2>Resultados ({{ totalPlayedMatches }} de {{ matchesData.length }})</h2>
+  <div class="form" v-if="matchesData.length">
     <div class="row header">
       <div class="col number">No.</div>
       <div class="col date">Fecha</div>
@@ -10,37 +11,49 @@
       <div class="col away">Visitante</div>
       <div class="col action">Acción</div>
     </div>
-    <template v-if="!isLoading && !errorMessage">
-      <div class="row body" v-for="(m, idx) in matchesData">
-        <div class="col number">{{ idx + 1 }}</div>
-        <div class="col date">{{ m.date }}</div>
-        <div class="col home">
-          {{ teamName(matchesData[idx]!.team1_id) }}
-          <input type="number" :id="'home-' + idx" min="0" max="10" placeholder="--" v-model="m.team1_goals" />
-        </div>
-        <div class="col away">
-          {{ teamName(matchesData[idx]!.team2_id) }}
-          <input type="number" :id="'away-' + idx" min="0" max="10" placeholder="--" v-model="m.team2_goals" />
-        </div>
-        <div class="col action">
-          <button @click="saveRow(m)" :disabled="!canSaveMatch(m)">Guardar</button>
-        </div>
+    <div class="row body" v-for="(m, idx) in matchesData">
+      <div class="col number">{{ idx + 1 }}</div>
+      <div class="col date">{{ m.date }}</div>
+      <div class="col home">
+        {{ teamName(matchesData[idx]!.team1_id) }}
+        <input
+          type="number"
+          :id="'home-' + idx"
+          min="0"
+          max="10"
+          placeholder="--"
+          v-model="m.team1_goals"
+        />
       </div>
-    </template>
+      <div class="col away">
+        {{ teamName(matchesData[idx]!.team2_id) }}
+        <input
+          type="number"
+          :id="'away-' + idx"
+          min="0"
+          max="10"
+          placeholder="--"
+          v-model="m.team2_goals"
+        />
+      </div>
+      <div class="col action">
+        <button @click="saveRow(m)" :disabled="!canSaveMatch(m)">Guardar</button>
+      </div>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
+import AlertComponent from '@/components/AlertComponent.vue'
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import type { IMatchModel } from '@/model/IMatch'
 import type { IResultPostModel } from '@/model/IResult'
 import type { ITeamModel } from '@/model/ITeam'
 import { MatchService } from '@/services/match.service'
 import { ResultService } from '@/services/result.service'
-import { onMounted, ref } from 'vue'
+import { alert } from '@/utils/utils'
+import { computed, onMounted, ref } from 'vue'
 
-const isLoading = ref<boolean>(false)
 const loadingMessage = ref<string>()
-const errorMessage = ref<string>()
 
 const teamsData = ref<ITeamModel[]>([])
 const matchesData = ref<IMatchModel[]>([])
@@ -49,8 +62,11 @@ onMounted(() => {
   const _teamsData: ITeamModel[] = JSON.parse(localStorage.getItem('teamsData') || '[]')
 
   if (!_teamsData.length) {
-    return (errorMessage.value =
-      'Error: No teams data was found in localstorage, please add them first in the Teams tab')
+    alert.value.data = {
+      header: 'Error',
+      message: 'No teams data was found in localstorage, please add them first in the Teams tab.',
+    }
+    return
   }
 
   /* const matches = JSON.parse(localStorage.getItem('matchesData') || '[]')
@@ -68,9 +84,8 @@ function teamName(id: number) {
 }
 
 function loadMatches() {
-  isLoading.value = true
   loadingMessage.value = 'Obteniendo Partidos...'
-  errorMessage.value = undefined
+  alert.value.reset()
 
   MatchService.list(true)
     .then((data) => {
@@ -81,18 +96,19 @@ function loadMatches() {
       }))
     })
     .catch((e) => {
-      errorMessage.value = 'Error: No se pudieron obtener los Partidos' + e
+      alert.value.data = {
+        header: 'Error',
+        message: 'Error: No se pudieron obtener los Partidos. ' + e,
+      }
     })
     .finally(() => {
       loadingMessage.value = undefined
-      isLoading.value = false
     })
 }
 
 function saveRow(m: IMatchModel) {
-  isLoading.value = true
   loadingMessage.value = 'Guardando resultados...'
-  errorMessage.value = undefined
+  alert.value.reset()
 
   const postData: IResultPostModel = {
     match_id: m.id!,
@@ -104,21 +120,27 @@ function saveRow(m: IMatchModel) {
 
   ResultService.insertRow(postData)
     .then((ok) => {
-      console.log('Ok', ok)
+      if (!ok) {
+        throw Error('Desconocido')
+      }
+
+      const m = matchesData.value.find((m) => m.id === postData.match_id)!
+      m.played = true
     })
     .catch((e) => {
-      errorMessage.value = 'Error: No se pudieron guardar los resultados. ' + e
+      alert.value.data = {
+        header: 'Error',
+        message: 'No se pudieron guardar los resultados. ' + e,
+      }
     })
     .finally(() => {
       loadingMessage.value = undefined
-      isLoading.value = false
     })
 }
 
 function saveAllData() {
-  isLoading.value = true
   loadingMessage.value = 'Guardando resultados...'
-  errorMessage.value = undefined
+  alert.value.reset()
 
   const postData: IResultPostModel[] = matchesData.value.map((m) => ({
     match_id: m.id!,
@@ -135,11 +157,13 @@ function saveAllData() {
       }
     })
     .catch((e) => {
-      errorMessage.value = 'Error: No se pudieron guardar los resultados' + e
+      alert.value.data = {
+        header: 'Error',
+        message: 'Error: No se pudieron guardar los resultados. ' + e,
+      }
     })
     .finally(() => {
       loadingMessage.value = undefined
-      isLoading.value = false
     })
 }
 
@@ -148,6 +172,12 @@ function canSaveMatch(m: IMatchModel) {
 
   return !noValues.includes(m.team1_goals) && !noValues.includes(m.team2_goals)
 }
+
+const totalPlayedMatches = computed(() => {
+  return matchesData.value.reduce((prev, curr) => {
+    return prev + (curr.played ? 1 : 0)
+  }, 0)
+})
 </script>
 
 <style scoped>

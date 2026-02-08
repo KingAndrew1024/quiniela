@@ -3,6 +3,14 @@
   font-family: 'Inter', sans-serif;
   /* font-size: 18px; */
   user-select: none;
+  line-height: 1;
+}
+
+html,
+body {
+  overflow: hidden;
+  overscroll-behavior-y: auto;
+  touch-action: none;
 }
 
 html,
@@ -81,7 +89,7 @@ html {
   width: 30px;
 } */
 
-.col input[type="number"] {
+.col input[type='number'] {
   text-align: center;
 }
 
@@ -237,4 +245,23 @@ html {
   content: '?';
   width: 100%;
   height: 100%;
+}
+
+.backdrop {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: black;
+  opacity: 0.75;
+  z-index: 9999;
+}
+
+#loading-message {
+  color: white;
 }
