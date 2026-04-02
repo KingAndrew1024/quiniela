@@ -112,6 +112,9 @@ html {
 .BEL {
   background-image: url(/flags/BEL.png);
 }
+.BIH {
+  background-image: url(/flags/BIH.png);
+}
 .BRA {
   background-image: url(/flags/BRA.png);
 }
@@ -120,6 +123,9 @@ html {
 }
 .CIV {
   background-image: url(/flags/CIV.png);
+}
+.COD {
+  background-image: url(/flags/COD.png);
 }
 .COL {
   background-image: url(/flags/COL.png);
@@ -132,6 +138,9 @@ html {
 }
 .CUW {
   background-image: url(/flags/CUW.png);
+}
+.CZE {
+  background-image: url(/flags/CZE.png);
 }
 .ECU {
   background-image: url(/flags/ECU.png);
@@ -159,6 +168,9 @@ html {
 }
 .IRN {
   background-image: url(/flags/IRN.png);
+}
+.IRQ {
+  background-image: url(/flags/IRQ.png);
 }
 .JOR {
   background-image: url(/flags/JOR.png);
@@ -211,8 +223,14 @@ html {
 .SUI {
   background-image: url(/flags/SUI.png);
 }
+.SWE {
+  background-image: url(/flags/SWE.png);
+}
 .TUN {
   background-image: url(/flags/TUN.png);
+}
+.TUR {
+  background-image: url(/flags/TUR.png);
 }
 .URU {
   background-image: url(/flags/URU.png);
