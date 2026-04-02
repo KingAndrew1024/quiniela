@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Feb 03, 2026 at 02:15 AM
+-- Generation Time: Apr 02, 2026 at 07:40 PM
 -- Server version: 9.1.0
 -- PHP Version: 7.4.33
 
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS `forecasts` (
   PRIMARY KEY (`id`),
   KEY `match_id_fk` (`match_id`),
   KEY `user_id_fk` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=73 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
 
 -- --------------------------------------------------------
 
@@ -200,12 +200,12 @@ INSERT INTO `teams` (`id`, `code`, `name`) VALUES
 (40, 'URU', 'URUGUAY'),
 (41, 'USA', 'ESTADOS UNIDOS'),
 (42, 'UZB', 'UZBEKISTAN'),
-(43, 'X1', 'X1'),
-(44, 'X2', 'X2'),
-(45, 'X3', 'X3'),
-(46, 'X4', 'X4'),
-(47, 'X5', 'X5'),
-(48, 'X6', 'X6');
+(43, 'CZE', 'REP. CHECA'),
+(44, 'BIH', 'BOSNIA'),
+(45, 'TUR', 'TURQUIA'),
+(46, 'SWE', 'SUECIA'),
+(47, 'IRQ', 'IRAQ'),
+(48, 'COD', 'CONGO');
 
 -- --------------------------------------------------------
 
@@ -221,7 +221,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `name` varchar(64) COLLATE utf8mb4_spanish_ci NOT NULL,
   `points` tinyint NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
 
 --
 -- Constraints for dumped tables
