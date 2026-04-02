@@ -136,7 +136,7 @@ class MatchesController extends BaseController
         //Run prepared statement for current record
         $stmt->execute(array('team1_goals' => $data['team1_goals'], 'team2_goals' => $data['team2_goals'], 'id' => $data['match_id']));
 
-        // Return the number of inserted rows
+        // Return true
         $responseData = json_encode(true);
         //$responseData = json_encode(array("insertedRows", $values));
       } catch (Error $e) {

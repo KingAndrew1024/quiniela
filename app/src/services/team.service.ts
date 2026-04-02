@@ -52,7 +52,27 @@ export class TeamService {
 
       return data.allRowsInserted
     } catch (error) {
-      console.error('--- @AdminCountries: saveTeamsData() error', error)
+      console.error('--- @TeamService: insert() error', error)
+      throw error
+    }
+  }
+  static async update(payload: ITeamModel): Promise<boolean> {
+    try {
+      payload.code = payload.code.toUpperCase();
+      payload.name = payload.name.toUpperCase();
+      const response = await fetch(`${API_HOST}/teams/update`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+
+      // Check if the response status is OK (e.g., status in the 200 range)
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('--- @TeamService: update() error', error)
       throw error
     }
   }
