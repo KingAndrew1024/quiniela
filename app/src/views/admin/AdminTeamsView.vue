@@ -106,7 +106,24 @@ function saveTeamsData() {
     })
 }
 
-function updateTeam(team: ITeamModel) {}
+function updateTeam(team: ITeamModel) {
+  loadingMessage.value = 'Guardando equipo...'
+  alert.value.reset()
+
+  TeamService.update(team)
+    .then((data) => {
+      console.log(data)
+    })
+    .catch((e) => {
+      alert.value.data = {
+        header: 'Error',
+        message: 'No se pudo guardar al Equipo ' + e,
+      }
+    })
+    .finally(() => {
+      loadingMessage.value = undefined
+    })
+}
 
 watch(teamsNumber, (newVal) => {
   teamsData.value = []
