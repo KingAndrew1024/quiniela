@@ -2,6 +2,7 @@ import AdminForecastsView from '@/views/admin/AdminForecastsView.vue'
 import AdminHomeView from '@/views/admin/AdminHomeView.vue'
 import AdminMatchesView from '@/views/admin/AdminMatchesView.vue'
 import AdminResultsView from '@/views/admin/AdminResultsView.vue'
+import AdminSheetView from '@/views/admin/AdminSheetView.vue'
 import AdminTeamsView from '@/views/admin/AdminTeamsView.vue'
 import AdminUsersView from '@/views/admin/AdminUsersView.vue'
 import HomeView from '@/views/HomeView.vue'
@@ -43,6 +44,11 @@ const router = createRouter({
           path: '/results',
           name: 'results',
           component: AdminResultsView,
+        },
+        {
+          path: '/sheet',
+          name: 'sheet',
+          component: AdminSheetView,
         },
       ],
     },
