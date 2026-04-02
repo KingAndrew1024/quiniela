@@ -47,7 +47,8 @@
 
     <div class="table" v-if="welcomeScreen && userForecasts.length">
       <div class="row header">
-        <div class="col rank" @click="sortByPoints()">
+        <div class="col rank" @click="sortByRank()">#</div>
+        <div class="col points" @click="sortByPoints()">
           <span>Puntos</span>
         </div>
         <div class="col username bold" @click="sortByUser()">Usuario</div>
@@ -79,7 +80,8 @@
       </div>
 
       <div class="row forecast-data" v-for="(data, idx) in userForecasts">
-        <div class="col rank">{{ data.user_points }}</div>
+        <div class="col rank">{{ data.rank }}</div>
+        <div class="col points">{{ data.user_points }}</div>
         <div class="col username" id="user">{{ data.user_name }}</div>
         <!-- <div class="col points" id="points">{{ data.user_points }}</div> -->
         <template v-for="(forecast, idx) in data.forecasts">
@@ -201,6 +203,7 @@ function loadData(): Promise<boolean> {
               users = data
 
               forecasts = await ForecastService.list()
+              //for (let i = 0; i < 30; i++)//<-- FOR TESTING (fill with several forecasts) !!!
               //userForecasts depends on users'd data
               users.forEach((user) => {
                 userForecasts.value.push({
@@ -265,6 +268,12 @@ function setMatchesWithTeamName(matches: IMatchModel[]): IMatcWithTeamName[] {
   })
 }
 
+/**
+ * Calculates and returns the sum of all matches points for a given user
+ * @see calculateMatchPoints function
+ * @param user_id user ID
+ * @returns number
+ */
 function calculateUserPoints(user_id: number): number {
   return matches.reduce((points: number, matchResult: IMatchModel): number => {
     if (!matchResult.played) {
@@ -283,54 +292,74 @@ function calculateUserPoints(user_id: number): number {
   }, 0)
 }
 
+/**
+ * Calculates a number depending on a match result
+ * Posiblle match results:
+ * a) Team A wins:    (2 - 0, A>B)
+ * b) Team B wins:    (3 - 5, A<B)
+ * c) It was a draw:  (1 - 1, A==B)
+ *
+ * Possible Function results:
+ * 1. (3pts) If FORECAST's score is exactly as MATCH's score (in any case: a|b|c)
+ * 2. (1pts) If FORECAST's winner is the same as MATCH's winner (case: a|b), no matter the forecast/match score matches
+ * 3. (0pts) In any other case
+ * @param matchResult Object { team1_goals: number; team2_goals: number },
+ * @param forecast Object { team1_goals: number; team2_goals: number },
+ * @returns number 0 | 1 | 3
+ */
 function calculateMatchPoints(
   matchResult: {
     team1_goals: number
     team2_goals: number
   },
   forecast: { team1_goals: number; team2_goals: number },
-): number {
-  let points = 0
+): 0 | 1 | 3 {
+  let points: 0 | 1 | 3 = 0
 
   /*
-    posibles casos:
-    1. se atina al marcador exacto = 3pts
-    2. si se atina al equipo que ganó = 1pt
-    3. cualquier otro caso = 0pts
-    */
+   * Posiblle match results:
+   * a) Team A wins:    (2 - 0, A>B)
+   * b) Team B wins:    (3 - 5, A<B)
+   * c) It was a draw:  (1 - 1, A==B)
+   */
 
-  //case 1: se atina al marcador exacto = 3pts
+  //(3pts) If FORECAST's score is exactly as MATCH's score (in any case: a|b|c)
   if (
     forecast.team1_goals === matchResult.team1_goals &&
     forecast.team2_goals === matchResult.team2_goals
   ) {
-    points += 3
+    points = 3
   }
-  //case 2. si se atina al equipo que ganó = 1pt
+  // (1pts) If FORECAST's winner is the same as MATCH's winner (case: a|b)
+  // no matter if the forecast/match scores match
   else if (
     (matchResult.team1_goals > matchResult.team2_goals &&
       forecast.team1_goals > forecast.team2_goals) ||
     (matchResult.team1_goals < matchResult.team2_goals &&
       forecast.team1_goals < forecast.team2_goals)
   ) {
-    points += 1
+    points = 1
   }
 
   return points
 }
 
-function calculateSingleMatchPoints(forecast: IUserForecastSimple): number {
-  const matchResult = matches.find((m) => m.id == forecast.match_id)!
-
-  if (!matchResult.played) {
+function calculateSingleMatchPoints(data: {
+  forecast: IUserForecastSimple
+  matchResult: IMatchModel
+}): number {
+  if (!data.matchResult.played) {
     return 0
   }
 
   const results = {
-    team1_goals: matchResult.team1_goals!,
-    team2_goals: matchResult.team2_goals!,
+    team1_goals: data.matchResult.team1_goals!,
+    team2_goals: data.matchResult.team2_goals!,
   }
-  const prediction = { team1_goals: forecast.team1_goals!, team2_goals: forecast.team2_goals! }
+  const prediction = {
+    team1_goals: data.forecast.team1_goals!,
+    team2_goals: data.forecast.team2_goals!,
+  }
 
   return calculateMatchPoints(results, prediction)
 }
@@ -338,12 +367,16 @@ function calculateSingleMatchPoints(forecast: IUserForecastSimple): number {
 function extractUserForecasts(user_id: number): IUserForecastSimple[] {
   return matches.map((match) => {
     const { match_id, team1_goals, team2_goals } = findForecastByUserAndMatch(user_id!, match.id!)!
+    //const matchResult =  matches.find((m) => m.id == match_id)!
 
     const match_points = calculateSingleMatchPoints({
-      match_id,
-      match_points: 0,
-      team1_goals,
-      team2_goals,
+      forecast: {
+        match_id,
+        match_points: 0,
+        team1_goals,
+        team2_goals,
+      },
+      matchResult: match,
     })
 
     const result: IUserForecastSimple = {
@@ -357,6 +390,7 @@ function extractUserForecasts(user_id: number): IUserForecastSimple[] {
   })
 }
 
+function sortByRank() {}
 function sortByPoints() {
   rankSorting = rankSorting == 'ASC' ? 'DESC' : 'ASC'
   userForecasts.value.sort((a, b) =>
@@ -387,10 +421,15 @@ function scrollToNearestMatchToDate() {
   const table = document.querySelector('.table')
   if (table && targetElement) {
     const colRank: HTMLElement = document.querySelector('.col.rank')!
+    const colPoints: HTMLElement = document.querySelector('.col.points')!
     const colUsername: HTMLElement = document.querySelector('.col.username')!
     table?.scrollTo({
       left:
-        targetElement.getBoundingClientRect().x - colRank.offsetWidth - colUsername.offsetWidth - 4, //the left padding!
+        targetElement.getBoundingClientRect().x -
+        colRank.offsetWidth -
+        colPoints.offsetWidth -
+        colUsername.offsetWidth -
+        4, //the left padding!
       behavior: 'smooth',
     })
   }
@@ -412,9 +451,9 @@ function closeWelcome() {
 
 function setPull2Refresh() {
   const pullToRefresh = document.querySelector('.pull-to-refresh') as HTMLElement
-  let touchstartY = 0
-  let delta = 0
-  const maxDistance = window.screen.height / 5
+  let touchstartY: number | undefined = undefined
+  let delta: number
+  const MAX_LOADER_TOP = window.screen.height / 5
 
   const loader: HTMLElement = document.querySelector('.loader')!
 
@@ -423,32 +462,39 @@ function setPull2Refresh() {
   }
 
   document.addEventListener('touchstart', (e) => {
-    touchstartY = e.touches[0]!.clientY
     delta = 0
   })
 
   document.addEventListener('touchmove', (e) => {
     const touchY = e.touches[0]!.clientY
-    const touchDiff = touchY - touchstartY
+    const table = document.querySelector('.table') as HTMLElement
+    const currentScrollTop = Math.round(table.scrollTop)
 
-    if (touchDiff && window.scrollY === 0) {
-      delta = Math.round(easeOutExpo((touchDiff - 20) / 1000, -40, maxDistance, 1.5))
+    if (currentScrollTop == 0) {
+      if (touchstartY === undefined) touchstartY = touchY
+      const touchDiff = touchY - touchstartY
+      if (!touchDiff) return
 
-      loader.style.transform = `rotateZ(${delta * 1.5}deg)`
+      pullToRefresh.classList.add('visible')
+      moveLoader(touchDiff)
+    } else {
+      const loaderTop = +pullToRefresh.style.top.replace('px', '')
 
-      if (delta > -40 && delta < maxDistance) {
-        pullToRefresh.classList.add('visible')
-        pullToRefresh.style.top = `${delta}px`
-      } else if (delta < 80) {
-        pullToRefresh.classList.add('visible')
-        pullToRefresh.style.top = `${delta}px`
+      if (loaderTop > -60 && touchstartY) {
+        moveLoader(touchY - touchstartY)
+      } else {
+        touchstartY = undefined
       }
-      e.preventDefault()
     }
+
+    e.preventDefault()
   })
+
   document.addEventListener('touchend', (e) => {
+    touchstartY = undefined
+
     pullToRefresh.classList.remove('visible')
-    if (delta > 70) {
+    if (delta > 50) {
       loader.classList.add('load')
 
       const table = document.querySelector('.table')
@@ -467,6 +513,12 @@ function setPull2Refresh() {
       pullToRefresh.style.top = '-60px'
     }
   })
+
+  function moveLoader(distance: number) {
+    delta = Math.round(easeOutExpo((distance - 20) / 1000, -60, MAX_LOADER_TOP, 1.5))
+    loader.style.transform = `rotateZ(${delta * 1.5}deg)`
+    pullToRefresh.style.top = `${delta}px`
+  }
 }
 
 /**
@@ -522,9 +574,15 @@ function easeOutExpo(t: number, b: number, c: number, d: number): number {
   width: 30px;
   z-index: 2;
 }
-.col.username {
+.col.points {
   position: sticky;
   left: 30px;
+  width: 30px;
+  z-index: 2;
+}
+.col.username {
+  position: sticky;
+  left: 60px;
   border-right: 1px dashed black;
   width: 150px;
   z-index: 2;
@@ -559,15 +617,19 @@ function easeOutExpo(t: number, b: number, c: number, d: number): number {
 .row.header .col.rank {
   border-left-style: solid;
 }
-.row.header .col.rank span {
+.row.header .col.points span {
   transform: rotate(-90deg);
 }
 .row.header .col.rank,
+.row.header .col.points,
 .row.header .col.username,
 .row.header .col.points {
   background: white;
   color: black;
   border-left-color: black;
+}
+.row.header .col.username {
+  border-right: 1px dashed black;
 }
 .row.header .col.col:first-child {
   border-color: black;
@@ -581,14 +643,18 @@ function easeOutExpo(t: number, b: number, c: number, d: number): number {
   border-right: 1px solid black;
 }
 .row.header .match {
-  background: #119977ef;
+  background: #119977;
   color: white;
 }
 .row.header .match:first-child {
   border-left-width: 0;
 }
 .row.header .match.even {
-  background: #2d61b6ef;
+  background: #2d61b6;
+}
+.row.header .col:nth-child(4) {
+  /* border-left-color: transparent; */
+  border-left: 0;
 }
 .row.header .match .flags-score {
   display: flex;
@@ -824,10 +890,14 @@ span.match-points {
 
 @media screen and (max-width: 500px) {
   .col.rank {
+    width: 24px;
+  }
+  .col.points {
+    left: 24px;
     width: 28px;
   }
   .col.username {
-    left: 28px;
+    left: 52px;
     width: 110px;
   }
 
@@ -846,22 +916,23 @@ span.match-points {
 
 .pull-to-refresh {
   position: fixed;
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   display: flex;
   justify-content: center;
   align-items: center;
 
-  z-index: 99;
   display: flex;
   align-items: center;
   object-fit: contain;
   background: whitesmoke;
+  box-shadow: 0 0 5px 0px black;
   border-radius: 50px;
   margin-left: auto;
   margin-right: auto;
   right: 0;
   left: 0;
+  z-index: 99;
 }
 .pull-to-refresh:not(.visible) {
   top: -60px;
@@ -869,14 +940,13 @@ span.match-points {
 }
 
 .loader {
-  width: 40px;
-  height: 40px;
-  border: 6px solid #ff0000;
+  width: 32px;
+  height: 32px;
+  border: 5px solid #00aaff;
   border-bottom-color: transparent;
   border-radius: 50%;
   display: inline-block;
   position: relative;
-  box-sizing: border-box;
 }
 .loader.load {
   animation: rotation 1s linear infinite;
@@ -884,11 +954,10 @@ span.match-points {
 .loader::after {
   content: '';
   position: absolute;
-  box-sizing: border-box;
-  left: 13px;
-  top: 23px;
-  border: 8px solid transparent;
-  border-right-color: #ff0000;
+  left: 10px;
+  top: 17px;
+  border: 7px solid transparent;
+  border-right-color: #00aaff;
   transform: rotate(-40deg);
 }
 
