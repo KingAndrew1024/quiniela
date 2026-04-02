@@ -18,6 +18,9 @@
       <button @click="showView('results')" :disabled="currentButton == BUTTONS_ENUM.results">
         Resultados
       </button>
+      <button @click="showView('sheet')" :disabled="currentButton == BUTTONS_ENUM.sheet">
+        XD
+      </button>
     </div>
   </div>
   <div id="route-content">
@@ -36,9 +39,10 @@ enum BUTTONS_ENUM {
   'users' = 'users',
   'forecasts' = 'forecasts',
   'results' = 'results',
+  'sheet' = 'sheet',
 }
 
-type buttonTypes = 'teams' | 'matches' | 'users' | 'forecasts' | 'results'
+type buttonTypes = keyof typeof BUTTONS_ENUM //'teams' | 'matches' | 'users' | 'forecasts' | 'results' |
 
 const currentButton = ref<buttonTypes>(router.currentRoute.value.name as buttonTypes)
 
