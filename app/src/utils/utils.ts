@@ -33,3 +33,25 @@ export const alert = ref<IAlertObj>({
     this.data.message = ''
   },
 })
+
+export const MONTHS_ES: { [k: number]: string } = {
+  0: 'ENREO',
+  1: 'FEBRERO',
+  2: 'MARZO',
+  3: 'ABRIL',
+  4: 'MAYO',
+  5: 'JUNIO',
+  6: 'JULIO',
+  7: 'AGOSTO',
+  8: 'SEPTIEMBRE',
+  9: 'OCTUBRE',
+  10: 'NOVIEMBRE',
+  11: 'DICIEMBRE',
+}
+
+export function dateToMonthAndDate(date: string) {
+  const d = new Date(date)
+  const month = MONTHS_ES[d.getMonth()]
+  const dayOfMonth = d.getDate()
+  return `${dayOfMonth}/${month}`
+}

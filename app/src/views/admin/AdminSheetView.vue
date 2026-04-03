@@ -2,56 +2,51 @@
   <LoadingComponent :message="loadingMessage"></LoadingComponent>
   <AlertComponent :data="alert.data"></AlertComponent>
 
-  <h2>Resultados ({{ totalPlayedMatches }} de {{ matchesData.length }})</h2>
-  <div class="form" v-if="matchesData.length">
-    <div class="row header">
-      <div class="col number">No.</div>
-      <div class="col date">Fecha</div>
-      <div class="col home">Local</div>
-      <div class="col away">Visitante</div>
-      <div class="col action">Acción</div>
-    </div>
-    <div class="row body" v-for="(m, idx) in matchesData">
-      <div class="col number">{{ idx + 1 }}</div>
-      <div class="col date">{{ m.date }}</div>
-      <div class="col home">
-        {{ teamName(matchesData[idx]!.team1_id) }}
-        <input
-          type="number"
-          :id="'home-' + idx"
-          min="0"
-          max="10"
-          placeholder="--"
-          v-model="m.team1_goals"
-        />
-      </div>
-      <div class="col away">
-        {{ teamName(matchesData[idx]!.team2_id) }}
-        <input
-          type="number"
-          :id="'away-' + idx"
-          min="0"
-          max="10"
-          placeholder="--"
-          v-model="m.team2_goals"
-        />
-      </div>
-      <div class="col action">
-        <button @click="saveRow(m)" :disabled="!canSaveMatch(m)">Guardar</button>
-      </div>
-    </div>
-  </div>
+  <table class="form" v-if="matchesData.length">
+    <thead class="row header">
+      <tr class="row">
+        <th scope="col" class="col number">No.</th>
+        <th scope="col" class="col date">Fecha</th>
+        <th scope="col" class="col home">Local</th>
+        <th scope="col" class="col away">Visitante</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="row body" v-for="(m, idx) in matchesData" :class="{ even: (idx + 1) % 2 == 0 }">
+        <td class="col number">{{ idx + 1 }}</td>
+        <td class="col date">{{ dateToMonthAndDate(m.date) }}</td>
+        <td class="col home">
+          {{ teamName(matchesData[idx]!.team1_id) }}
+          <input
+            type="number"
+            :id="'home-' + idx"
+            min="0"
+            max="10"
+            v-model="m.team1_goals"
+          />
+        </td>
+        <td class="col away">
+          {{ teamName(matchesData[idx]!.team2_id) }}
+          <input
+            type="number"
+            :id="'away-' + idx"
+            min="0"
+            max="10"
+            v-model="m.team2_goals"
+          />
+        </td>
+      </tr>
+    </tbody>
+  </table>
 </template>
 <script setup lang="ts">
 import AlertComponent from '@/components/AlertComponent.vue'
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import type { IMatchModel } from '@/model/IMatch'
-import type { IResultPostModel } from '@/model/IResult'
 import type { ITeamModel } from '@/model/ITeam'
 import { MatchService } from '@/services/match.service'
-import { ResultService } from '@/services/result.service'
-import { alert } from '@/utils/utils'
-import { computed, onMounted, ref } from 'vue'
+import { alert, dateToMonthAndDate } from '@/utils/utils'
+import { onMounted, ref } from 'vue'
 
 const loadingMessage = ref<string>()
 
@@ -105,85 +100,23 @@ function loadMatches() {
       loadingMessage.value = undefined
     })
 }
-
-function saveRow(m: IMatchModel) {
-  loadingMessage.value = 'Guardando resultados...'
-  alert.value.reset()
-
-  const postData: IResultPostModel = {
-    match_id: m.id!,
-    team1_id: m.team1_id,
-    team1_goals: m.team1_goals,
-    team2_id: m.team2_id,
-    team2_goals: m.team2_goals,
-  }
-
-  ResultService.insertRow(postData)
-    .then((ok) => {
-      if (!ok) {
-        throw Error('Desconocido')
-      }
-
-      const m = matchesData.value.find((m) => m.id === postData.match_id)!
-      m.played = true
-    })
-    .catch((e) => {
-      alert.value.data = {
-        header: 'Error',
-        message: 'No se pudieron guardar los resultados. ' + e,
-      }
-    })
-    .finally(() => {
-      loadingMessage.value = undefined
-    })
-}
-
-function saveAllData() {
-  loadingMessage.value = 'Guardando resultados...'
-  alert.value.reset()
-
-  const postData: IResultPostModel[] = matchesData.value.map((m) => ({
-    match_id: m.id!,
-    team1_id: m.team1_id,
-    team1_goals: m.team1_goals,
-    team2_id: m.team2_id,
-    team2_goals: m.team2_goals,
-  }))
-
-  ResultService.insertAll(postData)
-    .then((isOk) => {
-      if (!isOk) {
-        throw 'unknown error'
-      }
-    })
-    .catch((e) => {
-      alert.value.data = {
-        header: 'Error',
-        message: 'Error: No se pudieron guardar los resultados. ' + e,
-      }
-    })
-    .finally(() => {
-      loadingMessage.value = undefined
-    })
-}
-
-function canSaveMatch(m: IMatchModel) {
-  const noValues: (string | number | undefined)[] = ['', undefined]
-
-  return !noValues.includes(m.team1_goals) && !noValues.includes(m.team2_goals)
-}
-
-const totalPlayedMatches = computed(() => {
-  return matchesData.value.reduce((prev, curr) => {
-    return prev + (curr.played ? 1 : 0)
-  }, 0)
-})
 </script>
 
 <style scoped>
 .form {
   margin-top: 8px;
+  background-color: white;
 }
+.row.header {
+  background-color: #008bff;
+}
+.row.header .col {
+  justify-content: center;
+}
+.row.even {
+  background-color: lightblue;
+}
+
 .col {
   display: flex;
   flex-direction: column;
@@ -199,12 +132,16 @@ const totalPlayedMatches = computed(() => {
 }
 .col.home,
 .col.away {
-  width: 150px;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 4px;
+  width: 200px;
+  height: 40px;
 }
 .col.action {
   width: 80px;
 }
-.col.input {
-  width: 50px;
+.col input {
+  height: 30px;
 }
 </style>

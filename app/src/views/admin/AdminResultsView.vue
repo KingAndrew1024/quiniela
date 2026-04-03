@@ -11,9 +11,9 @@
       <div class="col away">Visitante</div>
       <div class="col action">Acción</div>
     </div>
-    <div class="row body" v-for="(m, idx) in matchesData">
+    <div class="row body" v-for="(m, idx) in matchesData" :class="{ even: (idx + 1) % 2 == 0 }">
       <div class="col number">{{ idx + 1 }}</div>
-      <div class="col date">{{ m.date }}</div>
+      <div class="col date">{{ dateToMonthAndDate(m.date) }}</div>
       <div class="col home">
         {{ teamName(matchesData[idx]!.team1_id) }}
         <input
@@ -50,7 +50,7 @@ import type { IResultPostModel } from '@/model/IResult'
 import type { ITeamModel } from '@/model/ITeam'
 import { MatchService } from '@/services/match.service'
 import { ResultService } from '@/services/result.service'
-import { alert } from '@/utils/utils'
+import { alert, dateToMonthAndDate } from '@/utils/utils'
 import { computed, onMounted, ref } from 'vue'
 
 const loadingMessage = ref<string>()
@@ -183,6 +183,16 @@ const totalPlayedMatches = computed(() => {
 <style scoped>
 .form {
   margin-top: 8px;
+  background-color: white;
+}
+.row.header {
+  background-color: #008bff;
+}
+.row.header .col {
+  justify-content: center;
+}
+.row.even {
+  background-color: #d1d1d1;
 }
 .col {
   display: flex;
@@ -199,12 +209,19 @@ const totalPlayedMatches = computed(() => {
 }
 .col.home,
 .col.away {
-  width: 150px;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 4px;
+  width: 200px;
+  height: 40px;
 }
 .col.action {
   width: 80px;
 }
 .col.input {
   width: 50px;
+}
+.col input {
+  height: 30px;
 }
 </style>
