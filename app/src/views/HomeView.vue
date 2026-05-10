@@ -19,7 +19,7 @@
                 <span class="match-points"> 3 </span>
               </div>
               <div class="instruction-row">
-                Puntos si atinaste <strong>al marcador exacto</strong>
+                Puntos si atinas <strong>al marcador exacto</strong>
               </div>
             </li>
             <li>
@@ -27,7 +27,7 @@
                 <span class="match-points"> 1 </span>
               </div>
               <div class="instruction-row">
-                Punto si sólo atinaste <strong>al equipo ganador</strong>
+                Punto si sólo atinas <strong>al equipo ganador</strong>
               </div>
             </li>
             <li>
