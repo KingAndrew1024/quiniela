@@ -38,7 +38,7 @@ class ForecastsController extends BaseController
     }
   }
 
-  public function listByUserAction()
+  public function listByUserIdAction()
   {
     $strErrorDesc = '';
     $requestMethod = $_SERVER["REQUEST_METHOD"];
@@ -59,6 +59,53 @@ class ForecastsController extends BaseController
         $sql = 'SELECT * FROM forecasts WHERE user_id=:user_id';
         $stmt = $this->dbHandle->prepare($sql);
         $stmt->execute(array('user_id' => $uri[3]));
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+
+        $responseData = json_encode($stmt->fetchAll());
+      } catch (Error $e) {
+        $strErrorDesc = $e->getMessage() . 'Something went wrong! Please contact support.';
+        $strErrorHeader = 'HTTP/1.1 500 Internal Server Error';
+      }
+    } else {
+      $strErrorDesc = 'Method not supported';
+      $strErrorHeader = 'HTTP/1.1 422 Unprocessable Entity';
+    }
+
+    // send output
+    if (!$strErrorDesc) {
+      $this->sendOutput(
+        $responseData,
+        array('Content-Type: application/json', 'HTTP/1.1 200 OK')
+      );
+    } else {
+      $this->sendOutput(
+        json_encode(array('error' => $strErrorDesc)),
+        array('Content-Type: application/json', $strErrorHeader)
+      );
+    }
+  }
+
+  public function listByUsernameAction()
+  {
+    $strErrorDesc = '';
+    $requestMethod = $_SERVER["REQUEST_METHOD"];
+
+    if (strtoupper($requestMethod) == 'GET') {
+      try {
+        $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $uri = substr($uri, strrpos($uri, 'php/'));
+        $uri = explode('/', $uri);
+
+        if (!isset($uri[3])) {
+          return $this->sendOutput(
+            json_encode(array('error' => 'No se recibieron los parametros necesarios (user name)')),
+            array('Content-Type: application/json', 'HTTP/1.1 422 Unprocessable Entity')
+          );
+        }
+
+        $sql = 'SELECT * FROM forecasts WHERE user_id=(SELECT id from users WHERE user=:user_name)';
+        $stmt = $this->dbHandle->prepare($sql);
+        $stmt->execute(array('user_name' => $uri[3]));
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
 
         $responseData = json_encode($stmt->fetchAll());
