@@ -153,14 +153,14 @@ async function getForecastByUser(id: number) {
   loadingMessage.value = 'Cargando Quiniela...'
   alert.value.reset()
 
-  ForecastService.getByUser(id!)
+  ForecastService.getByUserId(id!)
     .then(async (data) => {
       if (data.length) {
         userForecast.value = data
       }
 
       const userResponse = await UserService.userById(id)
-      userPostData.value = userResponse
+      userPostData.value = {...userResponse, password: ''}
       currentView.value = 'update'
 
       const table = document.querySelector('#forecast-form-wrapper .form')!

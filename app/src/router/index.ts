@@ -6,6 +6,7 @@ import AdminSheetView from '@/views/admin/AdminSheetView.vue'
 import AdminTeamsView from '@/views/admin/AdminTeamsView.vue'
 import AdminUsersView from '@/views/admin/AdminUsersView.vue'
 import HomeView from '@/views/HomeView.vue'
+import UserSheetView from '@/views/UserSheetView.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
@@ -16,37 +17,51 @@ const router = createRouter({
       component: HomeView,
     },
     {
+      path: '/:id',
+      component: HomeView,
+    },
+    {
+      path: '/quiniela/:id',
+      name: '/quiniela',
+      component: UserSheetView,
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'NotFound',
+      redirect: ''
+    },
+    {
       path: '/admin',
       name: 'admin',
       component: AdminHomeView,
       children: [
         {
-          path: '/matches',
+          path: '/admin/matches',
           name: 'matches',
           component: AdminMatchesView,
         },
         {
-          path: '/teams',
+          path: '/admin/teams',
           name: 'teams',
           component: AdminTeamsView,
         },
         {
-          path: '/users',
+          path: '/admin/users',
           name: 'users',
           component: AdminUsersView,
         },
         {
-          path: '/forecasts',
+          path: '/admin/forecasts',
           name: 'forecasts',
           component: AdminForecastsView,
         },
         {
-          path: '/results',
+          path: '/admin/results',
           name: 'results',
           component: AdminResultsView,
         },
         {
-          path: '/sheet',
+          path: '/admin/sheet',
           name: 'sheet',
           component: AdminSheetView,
         },

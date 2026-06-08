@@ -50,8 +50,11 @@ export const MONTHS_ES: { [k: number]: string } = {
 }
 
 export function dateToMonthAndDate(date: string) {
-  const d = new Date(date)
+  let d = new Date(date.split('-').join('/'))
+  const dateStr = d.toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }).split(',')[0]! //formatted as: d/m/YYYY
+  d = new Date(dateStr.split('/').reverse().join('/'))
+
   const month = MONTHS_ES[d.getMonth()]
   const dayOfMonth = d.getDate()
-  return `${dayOfMonth}/${month}`
+  return `${dayOfMonth}/${month?.substring(0,3)}`
 }

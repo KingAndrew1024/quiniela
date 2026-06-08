@@ -1,4 +1,4 @@
-import type { IUserPostModel } from '@/model/IUser'
+import type { IUserGetModel, IUserPostModel } from '@/model/IUser'
 import { API_HOST } from '@/utils/constants'
 
 export class UserService {
@@ -20,9 +20,25 @@ export class UserService {
     }
   }
 
-  static async userById(id: number) {
+  static async userById(id: number): Promise<IUserGetModel> {
     try {
-      const response = await fetch(`${API_HOST}/users/listByUser/${id}`)
+      const response = await fetch(`${API_HOST}/users/listByUserId/${id}`)
+
+      // Check if the response status is OK (e.g., status in the 200 range)
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('--- @AdminUsers: userById() error', error)
+      throw error
+    }
+  }
+
+  static async userByUsername(username: string): Promise<IUserGetModel> {
+    try {
+      const response = await fetch(`${API_HOST}/users/listByUsername/${username}`)
 
       // Check if the response status is OK (e.g., status in the 200 range)
       if (!response.ok) {

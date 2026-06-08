@@ -18,9 +18,9 @@ export class ForecastService {
     }
   }
 
-  static async getByUser(id: number): Promise<IForecastModel[]> {
+  static async getByUserId(id: number): Promise<IForecastModel[]> {
     try {
-      const response = await fetch(`${API_HOST}/forecasts/listByUser/${id}`)
+      const response = await fetch(`${API_HOST}/forecasts/listByUserId/${id}`)
 
       // Check if the response status is OK (e.g., status in the 200 range)
       if (!response.ok) {
@@ -30,6 +30,22 @@ export class ForecastService {
       return await response.json()
     } catch (error) {
       console.error('--- @ForecastService: getByUser() error', error)
+      throw error
+    }
+  }
+
+  static async getByUsername(username: string): Promise<IForecastModel[]> {
+    try {
+      const response = await fetch(`${API_HOST}/forecasts/listByUsername/${username}`)
+
+      // Check if the response status is OK (e.g., status in the 200 range)
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('--- @ForecastService: getByUsername() error', error)
       throw error
     }
   }

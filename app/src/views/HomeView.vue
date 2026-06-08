@@ -1,5 +1,5 @@
 <template>
-  <div id="main">
+  <div id="main" :class="{ blurred: mustBlur }">
     <div class="pull-to-refresh">
       <span class="loader"></span>
     </div>
@@ -19,7 +19,7 @@
                 <span class="match-points"> 3 </span>
               </div>
               <div class="instruction-row">
-                Puntos si atinas <strong>al marcador exacto</strong>
+                Puntos si atinas al <strong>marcador exacto</strong>
               </div>
             </li>
             <li>
@@ -27,14 +27,28 @@
                 <span class="match-points"> 1 </span>
               </div>
               <div class="instruction-row">
-                Punto si sólo atinas <strong>al equipo ganador</strong>
+                Punto si sólo atinas al <strong>equipo ganador</strong>
               </div>
             </li>
             <li>
-              <div class="match-points-wrapper" style="transform: none; border: 0">0</div>
-              <div class="instruction-row">Puntos en cualquier otro caso</div>
+              <div
+                class="match-points-wrapper"
+                style="transform: none; border: 0"
+              >
+                <strong>0</strong>
+              </div>
+              <div class="instruction-row" style="text-decoration: underline">Puntos en cualquier otro caso</div>
             </li>
           </ul>
+          <h3>
+            ¡Falta{{ daysLeft > 1 ? 'n' : '' }} {{ daysLeft }} día{{ daysLeft > 1 ? 's' : '' }}
+            para que puedas ver la tabla de pronósticos!
+          </h3>
+          <div>
+            Para ver de nuevo estas instrucciones, haz click en el ícono
+            <div class="question-mark">?</div>
+            ubicado en la parte inferior derecha.
+          </div>
         </div>
       </main>
       <footer>
@@ -82,14 +96,18 @@
       <div class="row forecast-data" v-for="(data, idx) in userForecasts">
         <div class="col rank">{{ data.rank }}</div>
         <div class="col points">{{ data.user_points }}</div>
-        <div class="col username" id="user">{{ data.user_name }}</div>
+        <div class="col username user">
+          <div>{{ data.user_name }}</div>
+        </div>
         <!-- <div class="col points" id="points">{{ data.user_points }}</div> -->
         <template v-for="(forecast, idx) in data.forecasts">
           <div
             class="col team forecast home"
             :class="{ even: idx % 2 === 0, 'first-col': idx == 0 }"
           >
-            {{ forecast.team1_goals }}
+            <div class="number">
+              {{ forecast.team1_goals }}
+            </div>
 
             <div
               v-if="forecast.match_points > 0"
@@ -102,7 +120,9 @@
             </div>
           </div>
           <div class="col team forecast visitor" :class="{ even: idx % 2 === 0 }">
-            {{ forecast.team2_goals }}
+            <div class="number">
+              {{ forecast.team2_goals }}
+            </div>
           </div>
         </template>
       </div>
@@ -167,7 +187,16 @@ const daysOfWeekMap: { [k: number]: string } = {
   6: 'Sab',
 }
 
+const mustBlur = ref<boolean>(true)
+const daysLeft = ref<number>(Infinity)
+
 onMounted(async () => {
+  daysLeft.value = 11 - todaysDate()
+  if (daysLeft.value > 1) {
+    showWelcome.value = true
+    return
+  }
+
   if (!welcomeScreen.value) {
     setTimeout(() => {
       showWelcome.value = true
@@ -181,6 +210,8 @@ onMounted(async () => {
 })
 
 function loadData(): Promise<boolean> {
+  mustBlur.value = todaysDate() < 11
+
   return new Promise((resolve, reject) => {
     userForecasts.value = []
     try {
@@ -213,6 +244,11 @@ function loadData(): Promise<boolean> {
                   forecasts: extractUserForecasts(user.id!),
                 })
               })
+
+              if (todaysDate() < 11) {
+                sortRandmly()
+              }
+
               //sorting
               userForecasts.value.sort((a, b) =>
                 rankSorting == 'ASC'
@@ -406,12 +442,26 @@ function sortByUser() {
   )
 }
 
-function scrollToNearestMatchToDate() {
-  const d = new Date('06-12-2026')
-  const dateStr = d.toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }).split(',')[0]!
-  const dateStrComps = dateStr.split('/')
+function sortRandmly() {
+  userForecasts.value.sort((a, b) => {
+    return Math.random() > 0.5 ? 1 : -1
+  })
+}
 
-  const date = new Date(`${dateStrComps[1]}-${dateStrComps[0]}-${dateStrComps[2]}`)
+function todaysDate(): number {
+  const d = new Date()
+  const dateStr = d.toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }).split(',')[0]!
+  return +dateStr[0]!
+}
+
+function scrollToNearestMatchToDate() {
+  //for testing
+  //const d = new Date('06-12-2026')
+
+  const d = new Date()
+  const dateStr = d.toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }).split(',')[0]!
+
+  const date = new Date(dateStr.split('/').reverse().join('/'))
   const dayOfMonth = date.getDate()
   const dayOfWeek = date.getDay()
 
@@ -539,6 +589,7 @@ function easeOutExpo(t: number, b: number, c: number, d: number): number {
 #main {
   display: flex;
   background: url(main-bg-2.jpg) no-repeat bottom;
+  background: url(../../public/main-bg-2.jpg) no-repeat bottom;
   background-size: cover;
   padding: 4px;
   width: 100%;
@@ -694,6 +745,11 @@ function easeOutExpo(t: number, b: number, c: number, d: number): number {
   padding: 12px 0;
   border-left-style: dashed;
   line-height: 1;
+}
+.blurred .row.forecast-data .user *,
+.blurred .row.forecast-data .number {
+  filter: blur(4px);
+  -webkit-filter: blur(4px);
 }
 
 .row.forecast-data .col:first-child {
@@ -886,6 +942,19 @@ span.match-points {
   color: white;
   width: 36px;
   height: 36px;
+}
+.question-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0095ff;
+  color: white;
+  border: 1px solid white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  box-shadow: 0 0 6px 0px black;
 }
 
 @media screen and (max-width: 500px) {
