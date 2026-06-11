@@ -13,37 +13,46 @@
         <div id="instructions">
           <h3>Instrucciones</h3>
           <div>Por cada partido obtendrás:</div>
-          <ul>
-            <li>
-              <div class="match-points-wrapper three">
-                <span class="match-points"> 3 </span>
+          <div class="ul">
+            <div class="li">
+              <div class="m-w">
+                <div class="match-points-wrapper three">
+                  <span class="match-points"> 3 </span>
+                </div>
               </div>
-              <div class="instruction-row">
-                Puntos si atinas al <strong>marcador exacto</strong>
+              <div class="instruction-col">
+                <div class="instruction-row">
+                  Puntos si atinas al <strong>marcador exacto</strong>, sea ganador o empate.
+                </div>
               </div>
-            </li>
-            <li>
-              <div class="match-points-wrapper one">
-                <span class="match-points"> 1 </span>
+            </div>
+            <div class="li">
+              <div class="m-w">
+                <div class="match-points-wrapper one">
+                  <span class="match-points"> 1 </span>
+                </div>
               </div>
-              <div class="instruction-row">
-                Punto si sólo atinas al <strong>equipo ganador</strong>
+              <div class="instruction-col">
+                <div>
+                  Punto si atinas al <strong>equipo ganador</strong> o
+                  <strong>al empate</strong> pero <strong>no al marcador</strong>.
+                </div>
               </div>
-            </li>
-            <li>
-              <div
-                class="match-points-wrapper"
-                style="transform: none; border: 0"
-              >
+            </div>
+            <div class="li">
+              <div class="match-points-wrapper" style="transform: none; border: 0">
                 <strong>0</strong>
               </div>
-              <div class="instruction-row" style="text-decoration: underline">Puntos en cualquier otro caso</div>
-            </li>
-          </ul>
-          <h3>
+              <div class="instruction-row" style="text-decoration: underline">
+                Puntos en cualquier otro caso
+              </div>
+            </div>
+          </div>
+          <h3 v-if="daysLeft > 1">
             ¡Falta{{ daysLeft > 1 ? 'n' : '' }} {{ daysLeft }} día{{ daysLeft > 1 ? 's' : '' }}
             para que puedas ver la tabla de pronósticos!
           </h3>
+          <br />
           <div>
             Para ver de nuevo estas instrucciones, haz click en el ícono
             <div class="question-mark">?</div>
@@ -61,11 +70,18 @@
 
     <div class="table" v-if="welcomeScreen && userForecasts.length">
       <div class="row header">
-        <div class="col rank" @click="sortByRank()">#</div>
-        <div class="col points" @click="sortByPoints()">
-          <span>Puntos</span>
+        <div class="col rank" @click="sortByRank()">
+          <div v-if="sortedBy == 'rank'">&#8645;</div> #
         </div>
-        <div class="col username bold" @click="sortByUser()">Usuario</div>
+        <div class="col points" @click="sortByPoints()" style="justify-content: space-around">
+          <div v-if="sortedBy == 'points'" style="margin-bottom: -10px; margin-top: -10px">
+            &#8645;
+          </div>
+          <span style="font-size: 10px">puntos</span>
+        </div>
+        <div class="col username bold" @click="sortByUser()">
+          Usuario <template v-if="sortedBy == 'name'">&#8645;</template>
+        </div>
         <!-- <div class="col points bold" @click="sortByPoints()">Puntos</div> -->
         <div
           class="col col-span-2 match"
@@ -96,7 +112,7 @@
       <div class="row forecast-data" v-for="(data, idx) in userForecasts">
         <div class="col rank">{{ data.rank }}</div>
         <div class="col points">{{ data.user_points }}</div>
-        <div class="col username user">
+        <div class="col username user" @click="view(data.user_id)">
           <div>{{ data.user_name }}</div>
         </div>
         <!-- <div class="col points" id="points">{{ data.user_points }}</div> -->
@@ -140,6 +156,7 @@ import { MatchService } from '@/services/match.service'
 import { TeamService } from '@/services/team.service'
 import { UserService } from '@/services/user.service'
 import { onMounted, ref } from 'vue'
+import router from '@/router'
 
 const welcomeScreen = ref<boolean>(localStorage.getItem('welcomeScreen') == 'true')
 const showWelcome = ref<boolean>(false)
@@ -170,12 +187,15 @@ interface IUserForecastSimple {
 interface IUserForecast {
   rank: number
   user_name: string
+  user_id: number
   user_points: number
   forecasts: IUserForecastSimple[]
 }
 const userForecasts = ref<IUserForecast[]>([])
 let rankSorting: 'ASC' | 'DESC' = 'ASC'
+let pointSorting: 'ASC' | 'DESC' = 'ASC'
 let nameSorting: 'ASC' | 'DESC' = 'ASC'
+let sortedBy = ref<'rank' | 'points' | 'name'>('points')
 
 const daysOfWeekMap: { [k: number]: string } = {
   0: 'Dom',
@@ -187,15 +207,17 @@ const daysOfWeekMap: { [k: number]: string } = {
   6: 'Sab',
 }
 
-const mustBlur = ref<boolean>(true)
+const mustBlur = ref<boolean>(false)
 const daysLeft = ref<number>(Infinity)
 
 onMounted(async () => {
   daysLeft.value = 11 - todaysDate()
+  /*
   if (daysLeft.value > 1) {
     showWelcome.value = true
+    mustBlur.value = true
     return
-  }
+  } */
 
   if (!welcomeScreen.value) {
     setTimeout(() => {
@@ -210,8 +232,6 @@ onMounted(async () => {
 })
 
 function loadData(): Promise<boolean> {
-  mustBlur.value = todaysDate() < 11
-
   return new Promise((resolve, reject) => {
     userForecasts.value = []
     try {
@@ -240,13 +260,14 @@ function loadData(): Promise<boolean> {
                 userForecasts.value.push({
                   rank: 0,
                   user_name: user.name,
+                  user_id: user.id!,
                   user_points: calculateUserPoints(user.id!),
                   forecasts: extractUserForecasts(user.id!),
                 })
               })
 
               if (todaysDate() < 11) {
-                sortRandmly()
+                //sortRandmly()
               }
 
               //sorting
@@ -426,20 +447,26 @@ function extractUserForecasts(user_id: number): IUserForecastSimple[] {
   })
 }
 
-function sortByRank() {}
-function sortByPoints() {
+function sortByRank() {
+  userForecasts.value.sort((a, b) => (rankSorting == 'ASC' ? b.rank - a.rank : a.rank - b.rank))
   rankSorting = rankSorting == 'ASC' ? 'DESC' : 'ASC'
+  sortedBy.value = 'rank'
+}
+function sortByPoints() {
   userForecasts.value.sort((a, b) =>
-    rankSorting == 'ASC' ? b.user_points - a.user_points : a.user_points - b.user_points,
+    pointSorting == 'ASC' ? b.user_points - a.user_points : a.user_points - b.user_points,
   )
+  pointSorting = pointSorting == 'ASC' ? 'DESC' : 'ASC'
+  sortedBy.value = 'points'
 }
 function sortByUser() {
-  nameSorting = nameSorting == 'ASC' ? 'DESC' : 'ASC'
   userForecasts.value.sort((a, b) =>
     nameSorting == 'ASC'
       ? a.user_name.localeCompare(b.user_name)
       : b.user_name.localeCompare(a.user_name),
   )
+  nameSorting = nameSorting == 'ASC' ? 'DESC' : 'ASC'
+  sortedBy.value = 'name'
 }
 
 function sortRandmly() {
@@ -450,8 +477,9 @@ function sortRandmly() {
 
 function todaysDate(): number {
   const d = new Date()
-  const dateStr = d.toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }).split(',')[0]!
-  return +dateStr[0]!
+  const dateStr = d.toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }).split('/')[0]!
+
+  return +dateStr!
 }
 
 function scrollToNearestMatchToDate() {
@@ -571,6 +599,10 @@ function setPull2Refresh() {
   }
 }
 
+function view(userId: number) {
+  router.push(`quiniela/${userId}`)
+}
+
 /**
  * Function used to animate a {@link Reel}
  * @param {number} t elapsedtime
@@ -638,6 +670,14 @@ function easeOutExpo(t: number, b: number, c: number, d: number): number {
   width: 150px;
   z-index: 2;
 }
+.row.header .col.rank:hover,
+.row.header .col.points:hover,
+.row.header .col.username:hover,
+.col.username:hover {
+  cursor: pointer;
+  background: lightcyan;
+}
+
 .col-span-2 {
   display: flex;
   flex-direction: column;
@@ -882,16 +922,20 @@ span.match-points {
   padding: 2px 4px 4px 4px;
   flex: 1;
 }
-#welcome-message-wrapper main ul {
+#welcome-message-wrapper main .ul {
+  display: flex;
+  flex-direction: column;
   list-style-type: none;
   text-align: left;
   margin: 6px auto auto;
   padding: 0 0 0 4px;
-  width: 70%;
+  width: 90%;
 }
-#welcome-message-wrapper main ul li {
+#welcome-message-wrapper main .ul .li {
   display: flex;
-  align-items: center;
+  flex: 1;
+  flex-direction: row;
+  align-items: flex-start;
   text-align: left;
   padding: 6px 0;
 }
@@ -903,7 +947,9 @@ span.match-points {
   width: 18px;
   height: 18px;
 }
-#welcome-message-wrapper .instruction-row {
+#welcome-message-wrapper .instruction-col {
+  display: flex;
+  flex-direction: column;
   padding-left: 5px;
 }
 #welcome-message-wrapper footer {
@@ -942,6 +988,8 @@ span.match-points {
   color: white;
   width: 36px;
   height: 36px;
+  opacity: 0.8;
+  z-index: 1;
 }
 .question-mark {
   display: flex;

@@ -3,6 +3,9 @@
   <AlertComponent :data="alert.data"></AlertComponent>
 
   <div id="main">
+    <div id="back-btn">
+      <button @click="back()">&larr;</button>
+    </div>
     <h1 v-if="userName">
       Hola <strong>{{ userName }}</strong
       >, esta es tu quienela:
@@ -43,6 +46,7 @@ import AlertComponent from '@/components/AlertComponent.vue'
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import type { IMatchModel } from '@/model/IMatch'
 import type { ITeamModel } from '@/model/ITeam'
+import router from '@/router'
 import { ForecastService } from '@/services/forecast.service'
 import { MatchService } from '@/services/match.service'
 import { TeamService } from '@/services/team.service'
@@ -52,7 +56,7 @@ import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const userId: string = route.params.id as string
+const userId: number = +(route.params.id || 0)
 
 const loadingMessage = ref<string>()
 
@@ -77,17 +81,18 @@ onMounted(() => {
       'Error, no Matches data was found in localstorage, please add them first in the Matches tab')
   } */
 
-  if (!userId) {
-    return (alert.value.data = {
+  if (userId < 2) {
+    /* return (alert.value.data = {
       header: 'Error',
       message: 'la url debe incluir el nombre de usuario!',
-    })
+    }) */
+    return router.push('/')
   }
 
   loadingMessage.value = 'Obteniendo Partidos...'
   alert.value.reset()
 
-  UserService.userByUsername(userId).then((userData) => {
+  UserService.userById(userId).then((userData) => {
     userName.value = userData.name
 
     /* if (!userData.name) {
@@ -112,7 +117,7 @@ function loadData() {
       .then(async (data) => {
         teamsData.value = data
         const matches = await MatchService.list(true)
-        const forecasts = await ForecastService.getByUsername(userId)
+        const forecasts = await ForecastService.getByUserId(userId)
 
         matchesData.value = matches.map((m) => {
           const forecast = forecasts.filter((f) => f.match_id == m.id)[0]!
@@ -138,7 +143,7 @@ function loadData() {
 function loadMatches() {
   MatchService.list(true)
     .then(async (matches) => {
-      const forecasts = await ForecastService.getByUsername(userId)
+      const forecasts = await ForecastService.getByUserId(userId)
 
       matchesData.value = matches.map((m) => {
         const forecast = forecasts.filter((f) => f.match_id == m.id)[0]!
@@ -159,9 +164,39 @@ function loadMatches() {
       loadingMessage.value = undefined
     })
 }
+
+function back() {
+  router.push('/')
+}
 </script>
 
 <style scoped>
+#back-btn {
+  background-color: lightgreen;
+  margin-right: auto;
+  margin-top: 8px;
+  margin-left: 8px;
+  margin-bottom: -30px;
+  border-radius: 6px;
+  border: 1px solid green;
+}
+#back-btn button {
+  background: transparent;
+  border: 0px solid green;
+  font-weight: bolder;
+  font-size: 16px;
+  color: green;
+  padding: 2px 6px;
+  line-height: 1;
+  padding-bottom: 2px;
+}
+#back-btn button:active,
+#back-btn button:hover {
+  cursor: pointer;
+  background: white;
+  border-radius: 6px;
+  color: blue;
+}
 #main {
   display: flex;
   flex-direction: column;
