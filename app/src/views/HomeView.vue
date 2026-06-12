@@ -71,7 +71,8 @@
     <div class="table" v-if="welcomeScreen && userForecasts.length">
       <div class="row header">
         <div class="col rank" @click="sortByRank()">
-          <div v-if="sortedBy == 'rank'">&#8645;</div> #
+          <div v-if="sortedBy == 'rank'">&#8645;</div>
+          #
         </div>
         <div class="col points" @click="sortByPoints()" style="justify-content: space-around">
           <div v-if="sortedBy == 'points'" style="margin-bottom: -10px; margin-top: -10px">
@@ -393,7 +394,9 @@ function calculateMatchPoints(
     (matchResult.team1_goals > matchResult.team2_goals &&
       forecast.team1_goals > forecast.team2_goals) ||
     (matchResult.team1_goals < matchResult.team2_goals &&
-      forecast.team1_goals < forecast.team2_goals)
+      forecast.team1_goals < forecast.team2_goals) ||
+    (matchResult.team1_goals == matchResult.team2_goals &&
+      forecast.team1_goals == forecast.team2_goals)
   ) {
     points = 1
   }
