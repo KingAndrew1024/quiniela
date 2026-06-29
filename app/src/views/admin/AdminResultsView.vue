@@ -125,7 +125,7 @@ function saveRow(m: IMatchModel) {
       }
 
       const m = matchesData.value.find((m) => m.id === postData.match_id)!
-      m.played = true
+      m.played = 1
     })
     .catch((e) => {
       alert.value.data = {

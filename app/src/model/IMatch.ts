@@ -5,5 +5,5 @@ export interface IMatchModel {
   team2_id: number
   team1_goals?: number
   team2_goals?: number
-  played?: boolean
+  played?: 0|1
 }

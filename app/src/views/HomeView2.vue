@@ -1,5 +1,5 @@
 <template>
-  <div id="main" :class="{ blurred: mustBlur }">
+  <div id="main">
     <div class="pull-to-refresh">
       <span class="loader"></span>
     </div>
@@ -68,7 +68,6 @@
         <button @click="closeWelcome">Entendido</button>
       </footer>
     </div> -->
-
     <div id="welcome-message-wrapper" v-if="showWinner">
       <header>
         <h3>¡FELICIDADES!</h3>
@@ -82,7 +81,8 @@
           ¡Gracias a todos <strong>por su confianza</strong> y por haber participado con entusiasmo!
         </p>
         <p>
-          Mucha suerte a los participantes en la nueva <strong>Quiniela de la Fase Eliminatoria</strong>
+          Mucha suerte a los participantes en la nueva
+          <strong>Quiniela de la Fase Eliminatoria</strong>
         </p>
       </main>
       <footer>
@@ -94,77 +94,66 @@
       ?
     </button>
 
-    <div class="table" v-if="welcomeScreen && userForecasts.length">
+    <div class="table" v-if="welcomeScreen">
       <div class="row header">
         <div class="col rank" @click="sortByRank()">
-          <div v-if="sortedBy == 'rank'">&#8645;</div>
+          <div v-if="sortedBy == 'rank'" style="color: green">&#8645;</div>
           #
         </div>
         <div class="col points" @click="sortByPoints()" style="justify-content: space-around">
-          <div v-if="sortedBy == 'points'" style="margin-bottom: -10px; margin-top: -10px">
+          <div
+            v-if="sortedBy == 'points'"
+            style="margin-bottom: -10px; margin-top: -10px; color: green"
+          >
             &#8645;
           </div>
           <span style="font-size: 10px">puntos</span>
         </div>
         <div class="col username bold" @click="sortByUser()">
-          Jugador <template v-if="sortedBy == 'name'">&#8645;</template>
+          <div>
+            <span v-if="sortedBy == 'name'" style="color: green">&#8645;</span>
+            Jugador
+          </div>
         </div>
         <!-- <div class="col points bold" @click="sortByPoints()">Puntos</div> -->
         <div
           class="col col-span-2 match"
-          :class="[
-            { even: idx % 2 === 0, 'not-played': !match.played },
-            match.date.split(' ').join('-'),
-          ]"
-          v-for="(match, idx) in MatchesWithTeamName"
+          :class="[{ even: idx % 2 === 0 }, 'p-' + phase.period.to]"
+          v-for="(phase, idx) in phaseData"
         >
-          <div class="flags-score">
-            <div class="flag" :class="match.team1_code" :title="match.team1_name"></div>
-            {{ match.date }}
-            <div class="flag" :class="match.team2_code" :title="match.team2_name"></div>
+          <div>
+            {{ phase.name }}
+            <div class="period">
+              {{
+                dateToMonthAndDate(phase.period.from) + ' - ' + dateToMonthAndDate(phase.period.to)
+              }}
+            </div>
           </div>
           <div class="flex-row">
-            <div class="team bold">
-              <div class="team-name">{{ match.team1_name }}</div>
-              {{ match.played ? match.team1_goals : '--' }}
-            </div>
-            <div class="team bold">
-              <div class="team-name">{{ match.team2_name }}</div>
-              {{ match.played ? match.team2_goals : '--' }}
-            </div>
+            <div class="team bold">Equipo</div>
+            <div class="team bold">Puntos</div>
           </div>
         </div>
       </div>
 
-      <div class="row forecast-data" v-for="(data, idx) in userForecasts">
-        <div class="col rank">{{ data.rank }}</div>
-        <div class="col points">{{ data.user_points }}</div>
-        <div class="col username user" @click="view(data.user_id)">
-          <div>{{ data.user_name }}</div>
+      <div class="row forecast-data" v-for="(data, idx) in userData">
+        <div class="col rank">{{ data.rank || '--' }}</div>
+        <div class="col points">{{ data.points }}</div>
+        <div class="col username user">
+          <div>{{ data.user }}</div>
         </div>
-        <!-- <div class="col points" id="points">{{ data.user_points }}</div> -->
-        <template v-for="(forecast, idx) in data.forecasts">
+        <template v-for="(forecast, idx) in data.phases">
           <div
             class="col team forecast home"
             :class="{ even: idx % 2 === 0, 'first-col': idx == 0 }"
           >
             <div class="number">
-              {{ forecast.team1_goals }}
-            </div>
-
-            <div
-              v-if="forecast.match_points > 0"
-              class="match-points-wrapper"
-              :class="{ one: forecast.match_points == 1, three: forecast.match_points == 3 }"
-            >
-              <span class="match-points">
-                {{ forecast.match_points }}
-              </span>
+              {{ forecast.team || '?' }}
             </div>
           </div>
           <div class="col team forecast visitor" :class="{ even: idx % 2 === 0 }">
             <div class="number">
-              {{ forecast.team2_goals }}
+              {{ forecast.points || '--' }}
             </div>
           </div>
         </template>
@@ -174,16 +163,169 @@
 </template>
 
 <script setup lang="ts">
-import type { IForecastModel } from '@/model/IForecast'
-import type { IMatchModel } from '@/model/IMatch'
-import type { IUserModel } from '@/model/interfaces'
-import type { ITeamModel } from '@/model/ITeam'
-import { ForecastService } from '@/services/forecast.service'
-import { MatchService } from '@/services/match.service'
-import { TeamService } from '@/services/team.service'
-import { UserService } from '@/services/user.service'
+import { dateToMonthAndDate } from '@/utils/utils'
 import { onMounted, ref } from 'vue'
-import router from '@/router'
+
+interface IPhaseData {
+  name: string
+  period: { from: string; to: string }
+}
+const phaseData = ref<IPhaseData[]>([
+  { name: 'Octavos (+5)', period: { from: '06-28-2026', to: '07-03-2026' } },
+  { name: 'Cuartos (+4)', period: { from: '07-04-2026', to: '07-07-2026' } },
+  { name: 'Semifinal (+3)', period: { from: '07-09-2026', to: '07-11-2026' } },
+  { name: 'Final (+2)', period: { from: '07-14-2026', to: '07-15-2026' } },
+  { name: 'Campeón (+1)', period: { from: '07-19-2026', to: '07-19-2026' } },
+])
+
+interface IUserData {
+  user: string
+  rank: number
+  points: number
+  phases: { id: number; team: string | undefined; points: number | undefined }[]
+}
+let userData = ref<IUserData[]>([
+  {
+    user: 'Serena',
+    rank: 0,
+    points: 0,
+    phases: [
+      { id: 0, team: 'Francia', points: undefined },
+      { id: 1, team: undefined, points: undefined },
+      { id: 2, team: undefined, points: undefined },
+      { id: 3, team: undefined, points: undefined },
+      { id: 4, team: undefined, points: undefined },
+    ],
+  },
+  {
+    user: 'Ale',
+    rank: 0,
+    points: 0,
+    phases: [
+      { id: 0, team: 'Países B.', points: undefined },
+      { id: 1, team: undefined, points: undefined },
+      { id: 2, team: undefined, points: undefined },
+      { id: 3, team: undefined, points: undefined },
+      { id: 4, team: undefined, points: undefined },
+    ],
+  },
+  {
+    user: 'Lucy',
+    rank: 0,
+    points: 0,
+    phases: [
+      { id: 0, team: 'Francia', points: undefined },
+      { id: 1, team: undefined, points: undefined },
+      { id: 2, team: undefined, points: undefined },
+      { id: 3, team: undefined, points: undefined },
+      { id: 4, team: undefined, points: undefined },
+    ],
+  },
+  {
+    user: 'Francisco',
+    rank: 0,
+    points: 0,
+    phases: [
+      { id: 0, team: 'Argentina', points: undefined },
+      { id: 1, team: undefined, points: undefined },
+      { id: 2, team: undefined, points: undefined },
+      { id: 3, team: undefined, points: undefined },
+      { id: 4, team: undefined, points: undefined },
+    ],
+  },
+  {
+    user: 'Magdalena',
+    rank: 0,
+    points: 0,
+    phases: [
+      { id: 0, team: 'Francia', points: undefined },
+      { id: 1, team: undefined, points: undefined },
+      { id: 2, team: undefined, points: undefined },
+      { id: 3, team: undefined, points: undefined },
+      { id: 4, team: undefined, points: undefined },
+    ],
+  },
+  {
+    user: 'K.Andrew',
+    rank: 0,
+    points: 0,
+    phases: [
+      { id: 0, team: 'Argentina', points: undefined },
+      { id: 1, team: undefined, points: undefined },
+      { id: 2, team: undefined, points: undefined },
+      { id: 3, team: undefined, points: undefined },
+      { id: 4, team: undefined, points: undefined },
+    ],
+  },
+  {
+    user: 'Hilda',
+    rank: 0,
+    points: 0,
+    phases: [
+      { id: 0, team: 'Francia', points: undefined },
+      { id: 1, team: undefined, points: undefined },
+      { id: 2, team: undefined, points: undefined },
+      { id: 3, team: undefined, points: undefined },
+      { id: 4, team: undefined, points: undefined },
+    ],
+  },
+  {
+    user: 'Edna',
+    rank: 0,
+    points: 0,
+    phases: [
+      { id: 0, team: 'Francia', points: undefined },
+      { id: 1, team: undefined, points: undefined },
+      { id: 2, team: undefined, points: undefined },
+      { id: 3, team: undefined, points: undefined },
+      { id: 4, team: undefined, points: undefined },
+    ],
+  },
+  {
+    user: 'Mario',
+    rank: 0,
+    points: 0,
+    phases: [
+      { id: 0, team: 'Francia', points: undefined },
+      { id: 1, team: undefined, points: undefined },
+      { id: 2, team: undefined, points: undefined },
+      { id: 3, team: undefined, points: undefined },
+      { id: 4, team: undefined, points: undefined },
+    ],
+  },
+  {
+    user: 'Myriam',
+    rank: 0,
+    points: 0,
+    phases: [
+      { id: 0, team: 'Inglaterra', points: undefined },
+      { id: 1, team: undefined, points: undefined },
+      { id: 2, team: undefined, points: undefined },
+      { id: 3, team: undefined, points: undefined },
+      { id: 4, team: undefined, points: undefined },
+    ],
+  },
+  {
+    user: 'Wichito',
+    rank: 0,
+    points: 0,
+    phases: [
+      { id: 0, team: 'Inglaterra', points: undefined },
+      { id: 1, team: undefined, points: undefined },
+      { id: 2, team: undefined, points: undefined },
+      { id: 3, team: undefined, points: undefined },
+      { id: 4, team: undefined, points: undefined },
+    ],
+  },
+])
+
+userData.value.forEach((user) => {
+  user.points = user.phases.reduce((prev, current) => {
+    return prev + (current.points || 0)
+  }, 0)
+})
+userData.value = userData.value.sort((a, b) => b.points - a.points)
+userData.value.forEach((user, idx) => (user.rank = idx + 1))
 
 declare const confetti: any
 let confettiIntervals: number[] = []
@@ -192,37 +334,6 @@ const welcomeScreen = ref<boolean>(localStorage.getItem('welcomeScreen') == 'tru
 const showWelcome = ref<boolean>(false)
 const showWinner = ref<boolean>(false)
 
-let matches: IMatchModel[] = []
-let users: IUserModel[] = []
-let teams: ITeamModel[] = []
-let forecasts: IForecastModel[] = []
-
-interface IMatcWithTeamName {
-  date: string
-  team1_code: string
-  team2_code: string
-  team1_name: string
-  team2_name: string
-  team1_goals: number
-  team2_goals: number
-  played: 0 | 1
-}
-const MatchesWithTeamName = ref<IMatcWithTeamName[]>([])
-
-interface IUserForecastSimple {
-  match_id: number
-  match_points: number
-  team1_goals?: number
-  team2_goals?: number
-}
-interface IUserForecast {
-  rank: number
-  user_name: string
-  user_id: number
-  user_points: number
-  forecasts: IUserForecastSimple[]
-}
-const userForecasts = ref<IUserForecast[]>([])
 let rankSorting: 'ASC' | 'DESC' = 'ASC'
 let pointSorting: 'ASC' | 'DESC' = 'ASC'
 let nameSorting: 'ASC' | 'DESC' = 'ASC'
@@ -238,29 +349,33 @@ const daysOfWeekMap: { [k: number]: string } = {
   6: 'Sab',
 }
 
-const mustBlur = ref<boolean>(false)
-const daysLeft = ref<number>(Infinity)
+const monthsName: { [k: number]: string } = {
+  0: 'ENE',
+  1: 'FEB',
+  2: 'MAR',
+  3: 'ABR',
+  4: 'MAY',
+  5: 'JUN',
+  6: 'JUL',
+  7: 'AGO',
+  8: 'SEP',
+  9: 'OCT',
+  10: 'NOV',
+  11: 'DIC',
+}
 
 onMounted(async () => {
-  daysLeft.value = 11 - todaysDate()
-  /*
-  if (daysLeft.value > 1) {
-    showWelcome.value = true
-    mustBlur.value = true
-    return
-  } */
-
   //if (!welcomeScreen.value) {
-    setTimeout(() => {
-      showWinner.value = true
-      showConfettiForWinner()
-      //localStorage.setItem('welcomeScreen', 'true')
-    }, 500)
+  setTimeout(() => {
+    showWinner.value = true
+    showConfettiForWinner()
+    //localStorage.setItem('welcomeScreen', 'true')
+  }, 500)
   //}
 
-  loadData()
-
   setPull2Refresh()
+
+  scrollToNearestMatchToDate()
 })
 
 function showConfettiForWinner() {
@@ -291,261 +406,48 @@ function showConfettiForWinner() {
     }
   }, 500)
 
-
   setTimeout(() => {
-    confettiIntervals.forEach(interval => {
+    confettiIntervals.forEach((interval) => {
       clearInterval(interval)
     })
-  }, 8 * 1000);
+  }, 8 * 1000)
 }
 
-function loadData(): Promise<boolean> {
-  return new Promise((resolve, reject) => {
-    userForecasts.value = []
-    try {
-      TeamService.list()
-        .then(async (data) => {
-          teams = data
+function showConfetti() {
+  const w = window.innerWidth
+  const h = window.innerHeight
 
-          //MatchesWithTeamName depends on teams data (to set the teams' names)
-          matches = await MatchService.list(true)
-          /* matches.sort((a, b) => {
-            const aDay = +a.date.split('-')[2]!;
-            const bDay = +b.date.split('-')[2]!;
-             return bDay - aDay
-          }) */
+  let x = getRandomIntInclusive(50, w)
+  let y = getRandomIntInclusive(50, h)
 
-          MatchesWithTeamName.value = setMatchesWithTeamName(matches)
+  x = getRandomIntInclusive(20, w - 20)
+  y = getRandomIntInclusive(20, h - 20)
 
-          UserService.list()
-            .then(async (data) => {
-              users = data
-
-              forecasts = await ForecastService.list()
-              //for (let i = 0; i < 30; i++)//<-- FOR TESTING (fill with several forecasts) !!!
-              //userForecasts depends on users'd data
-              users.forEach((user) => {
-                userForecasts.value.push({
-                  rank: 0,
-                  user_name: user.name,
-                  user_id: user.id!,
-                  user_points: calculateUserPoints(user.id!),
-                  forecasts: extractUserForecasts(user.id!),
-                })
-              })
-
-              if (todaysDate() < 11) {
-                //sortRandmly()
-              }
-
-              //sorting
-              userForecasts.value.sort((a, b) =>
-                rankSorting == 'ASC'
-                  ? b.user_points - a.user_points
-                  : a.user_points - b.user_points,
-              )
-              userForecasts.value.forEach((uf, idx) => {
-                uf.rank = idx + 1
-              })
-
-              //console.log('=== userForecasts', userForecasts.value[0])
-
-              setTimeout(() => {
-                scrollToNearestMatchToDate()
-                showWinner.value = true
-              }, 500)
-              resolve(true)
-            })
-            .catch((e) => {
-              throw e
-            })
-        })
-        .catch((e) => {
-          throw e
-        })
-    } catch (error) {
-      console.error(error)
-    }
-  })
-}
-
-function findForecastByUserAndMatch(userId: number, matchId: number): IForecastModel | undefined {
-  return forecasts.find((forecast) => forecast.user_id == userId && forecast.match_id === matchId)
-}
-
-function setMatchesWithTeamName(matches: IMatchModel[]): IMatcWithTeamName[] {
-  return matches.map((match) => {
-    const team1 = teams.find((team) => team.id === match.team1_id)!
-    const team2 = teams.find((team) => team.id === match.team2_id)!
-
-    const dateComps = match.date.split('-')
-    const date = new Date(`${dateComps[1]}/${dateComps[2]}/${dateComps[0]}`)
-    const dayOfMonth = date.getDate()
-    const dayOfWeek = date.getDay()
-
-    return {
-      date: `${daysOfWeekMap[dayOfWeek]} ${dayOfMonth}`,
-      team1_code: team1.code,
-      team2_code: team2.code,
-      team1_name: team1.name,
-      team2_name: team2.name,
-      team1_goals: match.team1_goals!,
-      team2_goals: match.team2_goals!,
-      played: match.played!,
-    }
-  })
-}
-
-/**
- * Calculates and returns the sum of all matches points for a given user
- * @see calculateMatchPoints function
- * @param user_id user ID
- * @returns number
- */
-function calculateUserPoints(user_id: number): number {
-  return matches.reduce((points: number, matchResult: IMatchModel): number => {
-    if (!matchResult.played) {
-      return points
-    }
-
-    const forecast = findForecastByUserAndMatch(user_id, matchResult.id!)!
-
-    const results = {
-      team1_goals: matchResult.team1_goals!,
-      team2_goals: matchResult.team2_goals!,
-    }
-    const prediction = { team1_goals: forecast.team1_goals!, team2_goals: forecast.team2_goals! }
-
-    return (points += calculateMatchPoints(results, prediction))
-  }, 0)
-}
-
-/**
- * Calculates a number depending on a match result
- * Posiblle match results:
- * a) Team A wins:    (2 - 0, A>B)
- * b) Team B wins:    (3 - 5, A<B)
- * c) It was a draw:  (1 - 1, A==B)
- *
- * Possible Function results:
- * 1. (3pts) If FORECAST's score is exactly as MATCH's score (in any case: a|b|c)
- * 2. (1pts) If FORECAST's winner is the same as MATCH's winner (case: a|b), no matter the forecast/match score matches
- * 3. (0pts) In any other case
- * @param matchResult Object { team1_goals: number; team2_goals: number },
- * @param forecast Object { team1_goals: number; team2_goals: number },
- * @returns number 0 | 1 | 3
- */
-function calculateMatchPoints(
-  matchResult: {
-    team1_goals: number
-    team2_goals: number
-  },
-  forecast: { team1_goals: number; team2_goals: number },
-): 0 | 1 | 3 {
-  let points: 0 | 1 | 3 = 0
-
-  /*
-   * Posiblle match results:
-   * a) Team A wins:    (2 - 0, A>B)
-   * b) Team B wins:    (3 - 5, A<B)
-   * c) It was a draw:  (1 - 1, A==B)
-   */
-
-  //(3pts) If FORECAST's score is exactly as MATCH's score (in any case: a|b|c)
-  if (
-    forecast.team1_goals === matchResult.team1_goals &&
-    forecast.team2_goals === matchResult.team2_goals
-  ) {
-    points = 3
-  }
-  // (1pts) If FORECAST's winner is the same as MATCH's winner (case: a|b)
-  // no matter if the forecast/match scores match
-  else if (
-    (matchResult.team1_goals > matchResult.team2_goals &&
-      forecast.team1_goals > forecast.team2_goals) ||
-    (matchResult.team1_goals < matchResult.team2_goals &&
-      forecast.team1_goals < forecast.team2_goals) ||
-    (matchResult.team1_goals == matchResult.team2_goals &&
-      forecast.team1_goals == forecast.team2_goals)
-  ) {
-    points = 1
-  }
-
-  return points
-}
-
-function calculateSingleMatchPoints(data: {
-  forecast: IUserForecastSimple
-  matchResult: IMatchModel
-}): number {
-  if (!data.matchResult.played) {
-    return 0
-  }
-
-  const results = {
-    team1_goals: data.matchResult.team1_goals!,
-    team2_goals: data.matchResult.team2_goals!,
-  }
-  const prediction = {
-    team1_goals: data.forecast.team1_goals!,
-    team2_goals: data.forecast.team2_goals!,
-  }
-
-  return calculateMatchPoints(results, prediction)
-}
-
-function extractUserForecasts(user_id: number): IUserForecastSimple[] {
-  return matches.map((match) => {
-    const { match_id, team1_goals, team2_goals } = findForecastByUserAndMatch(user_id!, match.id!)!
-    //const matchResult =  matches.find((m) => m.id == match_id)!
-
-    const match_points = calculateSingleMatchPoints({
-      forecast: {
-        match_id,
-        match_points: 0,
-        team1_goals,
-        team2_goals,
-      },
-      matchResult: match,
-    })
-
-    const result: IUserForecastSimple = {
-      match_id,
-      match_points,
-      team1_goals,
-      team2_goals,
-    }
-
-    return result
+  confetti({
+    position: { x, y }, // Origin position
+    count: 100, // Number of particles
+    size: 1, // Size of the particles
+    velocity: 200, // Initial particle velocity
+    fade: true, // Particles fall off the screen, or fade out
   })
 }
 
 function sortByRank() {
-  userForecasts.value.sort((a, b) => (rankSorting == 'ASC' ? b.rank - a.rank : a.rank - b.rank))
+  userData.value.sort((a, b) => (rankSorting == 'ASC' ? b.rank - a.rank : a.rank - b.rank))
   rankSorting = rankSorting == 'ASC' ? 'DESC' : 'ASC'
   sortedBy.value = 'rank'
 }
 function sortByPoints() {
-  userForecasts.value.sort((a, b) =>
-    pointSorting == 'ASC' ? b.user_points - a.user_points : a.user_points - b.user_points,
-  )
+  userData.value.sort((a, b) => (pointSorting == 'ASC' ? b.points - a.points : a.points - b.points))
   pointSorting = pointSorting == 'ASC' ? 'DESC' : 'ASC'
   sortedBy.value = 'points'
 }
 function sortByUser() {
-  userForecasts.value.sort((a, b) =>
-    nameSorting == 'ASC'
-      ? a.user_name.localeCompare(b.user_name)
-      : b.user_name.localeCompare(a.user_name),
+  userData.value.sort((a, b) =>
+    nameSorting == 'ASC' ? a.user.localeCompare(b.user) : b.user.localeCompare(a.user),
   )
   nameSorting = nameSorting == 'ASC' ? 'DESC' : 'ASC'
   sortedBy.value = 'name'
-}
-
-function sortRandmly() {
-  userForecasts.value.sort((a, b) => {
-    return Math.random() > 0.5 ? 1 : -1
-  })
 }
 
 function todaysDate(): number {
@@ -557,17 +459,35 @@ function todaysDate(): number {
 
 function scrollToNearestMatchToDate() {
   //for testing
-  //const d = new Date('06-12-2026')
+  //const d = new Date('07-21-2026')
 
   const d = new Date()
   const dateStr = d.toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }).split(',')[0]!
 
-  const date = new Date(dateStr.split('/').reverse().join('/'))
+  const date: Date = new Date(dateStr.split('/').reverse().join('/'))
+  const monthIndex = d.getMonth()
   const dayOfMonth = date.getDate()
-  const dayOfWeek = date.getDay()
 
-  const targetClass = `${daysOfWeekMap[dayOfWeek]}-${dayOfMonth}`
-  const targetElement = document.querySelector(`.${targetClass}`)
+  let targetClass = undefined
+  phaseData.value.some((phase) => {
+    const toElements = phase.period.to.split('-')
+
+    if (monthIndex + 1 < +toElements[0]!) {
+      targetClass = phase.period.to
+      return true
+    }
+
+    if (monthIndex + 1 <= +toElements[0]! && dayOfMonth <= +toElements[1]!) {
+      targetClass = phase.period.to
+      return true
+    }
+
+    return false
+  })
+
+  targetClass = targetClass || phaseData.value[phaseData.value.length - 1]?.period.to
+
+  const targetElement = document.querySelector(`.p-${targetClass}`)
 
   const table = document.querySelector('.table')
   if (table && targetElement) {
@@ -681,15 +601,7 @@ function setPull2Refresh() {
       })
 
       console.log('--- Reloading...')
-      location.reload();
-      /* loadData().finally(() => {
-        pullToRefresh.style.top = '-60px'
-        setTimeout(() => {
-          loader.classList.remove('load')
-
-          showWinner.value = true
-        }, 500)
-      }) */
+      location.reload()
     } else {
       pullToRefresh.style.top = '-60px'
     }
@@ -700,10 +612,6 @@ function setPull2Refresh() {
     loader.style.transform = `rotateZ(${delta * 1.5}deg)`
     pullToRefresh.style.top = `${delta}px`
   }
-}
-
-function view(userId: number) {
-  router.push(`quiniela/${userId}`)
 }
 
 /**
@@ -717,24 +625,6 @@ function view(userId: number) {
  */
 function easeOutExpo(t: number, b: number, c: number, d: number): number {
   return t == d ? b + c : c * (-Math.pow(2, (-10 * t) / d) + 1) + b
-}
-function showConfetti() {
-  const w = window.innerWidth
-  const h = window.innerHeight
-
-  let x = getRandomIntInclusive(50, w)
-  let y = getRandomIntInclusive(50, h)
-
-  x = getRandomIntInclusive(20, w - 20)
-  y = getRandomIntInclusive(20, h - 20)
-
-  confetti({
-    position: { x, y }, // Origin position
-    count: 100, // Number of particles
-    size: 1, // Size of the particles
-    velocity: 200, // Initial particle velocity
-    fade: true, // Particles fall off the screen, or fade out
-  })
 }
 
 function getRandomIntInclusive(min: number, max: number) {
@@ -797,13 +687,13 @@ function getRandomIntInclusive(min: number, max: number) {
   width: 150px;
   z-index: 2;
 }
-.row.header .col.rank:hover,
+/* .row.header .col.rank:hover,
 .row.header .col.points:hover,
 .row.header .col.username:hover,
 .col.username:hover {
   cursor: pointer;
   background: lightcyan;
-}
+} */
 
 .col-span-2 {
   display: flex;
@@ -845,6 +735,7 @@ function getRandomIntInclusive(min: number, max: number) {
   background: white;
   color: black;
   border-left-color: black;
+  height: 68px;
 }
 .row.header .col.username {
   border-right: 1px dashed black;
@@ -1130,6 +1021,11 @@ span.match-points {
   height: 15px;
   display: inline-block;
   box-shadow: 0 0 6px 0px black;
+}
+
+.period {
+  font-size: 12px;
+  margin-top: 4px;
 }
 
 @media screen and (max-width: 500px) {

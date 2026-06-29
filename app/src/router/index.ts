@@ -6,6 +6,7 @@ import AdminSheetView from '@/views/admin/AdminSheetView.vue'
 import AdminTeamsView from '@/views/admin/AdminTeamsView.vue'
 import AdminUsersView from '@/views/admin/AdminUsersView.vue'
 import HomeView from '@/views/HomeView.vue'
+import HomeView2 from '@/views/HomeView2.vue'
 import UserSheetView from '@/views/UserSheetView.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
@@ -14,11 +15,11 @@ const router = createRouter({
   routes: [
     {
       path: '',
-      component: HomeView,
+      component: HomeView2,
     },
     {
       path: '/:id',
-      component: HomeView,
+      component: HomeView2,
     },
     {
       path: '/quiniela/:id',
